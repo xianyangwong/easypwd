@@ -1,65 +1,99 @@
 import Head from 'next/head'
 import styles from '../styles/Home.module.css'
+import React, { Component } from 'react';
 
-export default function Home() {
-  return (
-    <div className={styles.container}>
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
 
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+class Home extends Component {
+  constructor(props){
+    super(props)
 
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
+    this.state = {
+      password: '',
+      secretKey: '',
+      generatedPassword: ''
+    }
 
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
+    this.onChange = this.onChange.bind(this)
+    this.generate = this.generate.bind(this)
+  }
 
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
 
+  onChange(e) {
+    this.setState({
+      [e.target.name]: e.target.value
+    })
+  }
+
+  async generate(e) {
+    e.preventDefault()
+    const { password, secretKey } = this.state
+
+    if (password && secretKey) {
+      const { generatedPassword } = await fetch('/api/password', {
+        method: 'POST',
+        body: JSON.stringify({
+          password,
+          secretKey
+        })
+      }).then(res => res.json())
+  
+      this.setState({
+        generatedPassword
+      })
+    }
+    
+  }
+  
+  render () {  
+    return (
+      <div className={styles.container}>
+        <Head>
+          <title>EasyPwd - there's no need to remember password anymore</title>
+          <link rel="icon" href="/favicon.ico" />
+        </Head>
+
+        <main className={styles.main}>
+          <h1 className={styles.title}>
+            EasyPwd
+          </h1>
+
+          <p className={styles.description}>
+            There's no need to remember password anymore
+          </p>
+
+          <div className={styles.grid}>
+            <div className={styles.card}>
+              <input type='text' name='password' placeholder='Password' className={styles.input} onChange={this.onChange}/>
+              <input type='password' name='secretKey' placeholder='Secret Key' className={styles.input} onChange={this.onChange}/>
+              <button onClick={this.generate} className={styles.btn}>Generate</button>
+              {
+                this.state.generatedPassword && (
+                  <>
+                    <br/><br/>
+                    <hr/>
+                    <br/>
+                    <code className={styles.code}>{this.state.generatedPassword}</code>
+                  </>
+                )
+              }
+            </div>
+          </div>
+        </main>
+
+        <footer className={styles.footer}>
           <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
+            href="https://xianyangwong.com"
+            target="_blank"
+            rel="noopener noreferrer"
           >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
+            Powered by{' '}
+            <img src="/xianyang.svg" alt="Vercel Logo" className={styles.logo} />
           </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
-    </div>
-  )
+        </footer>
+      </div>
+    )
+  }
 }
+
+
+export default Home
