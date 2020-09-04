@@ -63,7 +63,7 @@ class Home extends Component {
           </p>
 
           <div className={styles.grid}>
-            <div className={styles.card}>
+            <form className={styles.card} onSubmit={this.generate}>
               <input type='text' name='password' placeholder='Password' className={styles.input} onChange={this.onChange}/>
               <input type='password' name='secretKey' placeholder='Secret Key' className={styles.input} onChange={this.onChange}/>
               <button onClick={this.generate} className={styles.btn}>Generate</button>
@@ -77,7 +77,7 @@ class Home extends Component {
                   </>
                 )
               }
-            </div>
+            </form>
           </div>
         </main>
 
