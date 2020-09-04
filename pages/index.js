@@ -50,6 +50,7 @@ class Home extends Component {
         <Head>
           <title>EasyPwd - there's no need to remember password anymore</title>
           <link rel="icon" href="/favicon.ico" />
+          <script data-ad-client="ca-pub-2963124893727920" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
         </Head>
 
         <main className={styles.main}>
