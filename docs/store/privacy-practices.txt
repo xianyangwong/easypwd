@@ -1,0 +1,10 @@
+Single purpose:
+EasyPwd is a password manager. It generates a unique password for each website from the user's email, master passphrase, and the site name, and keeps passwords the user can't change in a local encrypted vault. All work happens on the user's device.
+
+storage justification:
+Used to save the user's encrypted password vault and the auto-lock setting in chrome.storage.local on the user's device. The vault is encrypted with AES-256-GCM before it is written. Nothing is synced or sent anywhere.
+
+clipboardWrite justification:
+Used only when the user clicks a Copy button, to copy a username, password, or website to the clipboard so they can paste it into a login form. The extension never copies anything automatically and never reads the clipboard.
+
+Remote code: No, I am not using remote code.

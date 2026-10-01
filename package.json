@@ -1,7 +1,7 @@
 {
   "name": "easypwd",
   "version": "0.2.0",
-  "description": "An offline-first Chrome extension with a local encrypted password vault.",
+  "description": "An offline Chrome extension that generates the same strong password for every site from one passphrase.",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -11,6 +11,7 @@
   "scripts": {
     "test": "node --test",
     "check": "node scripts/check.js",
-    "build": "node scripts/build.js"
+    "build": "node scripts/build.js",
+    "package": "node scripts/build.js && cd dist/easypwd && zip -qrX ../easypwd-$npm_package_version.zip . && echo Created dist/easypwd-$npm_package_version.zip"
   }
 }
