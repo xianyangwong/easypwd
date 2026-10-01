@@ -9,7 +9,7 @@ email and passphrase, and you get the same passwords. Passwords you can't
 change are kept in a local encrypted vault. No account, server, cloud sync,
 analytics, or website access.
 
-**Website and live demo:** https://xianyangwong.github.io/easypwd/
+**Website and live demo:** https://easypwd.xianyangwong.com/
 
 ![EasyPwd vault with a list of logins and a selected login's details](docs/screenshot.png)
 
