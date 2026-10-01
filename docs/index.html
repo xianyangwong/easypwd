@@ -10,7 +10,9 @@
   <meta property="og:image" content="https://easypwd.xianyangwong.com/screenshot.png">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <script>document.documentElement.classList.add("js")</script>
   <link rel="stylesheet" href="site.css">
+  <script type="module" src="motion.js"></script>
   <script type="module" src="demo.js"></script>
 </head>
 <body>
@@ -26,43 +28,45 @@
 
   <main>
     <section class="hero wrap">
+      <div class="glow" aria-hidden="true"></div>
       <p class="eyebrow">Open source · Offline · No account</p>
       <h1>Remember one passphrase.<br>Get the same strong password everywhere.</h1>
       <p class="lead">EasyPwd calculates a unique password for each website from your email, your passphrase, and the site's name. Install it on another computer, type the same two things, and every password is already there. Nothing is synced, because there's nothing to sync.</p>
+      <div class="ticker" aria-hidden="true"><span class="dot"></span><span id="t-site">github.com</span><span class="arrow">→</span><code id="t-pw">Um{GT&amp;=2yz$:C[#j9}zk</code></div>
       <div class="actions">
         <a class="btn primary" href="https://github.com/xianyangwong/easypwd#install-locally">Install for Chrome</a>
         <a class="btn" href="#try">Try it in your browser</a>
       </div>
-      <img class="shot" src="screenshot.png" width="1280" height="640" alt="EasyPwd showing a list of logins and the generated password for github.com">
+      <img class="shot reveal" src="screenshot.png" width="1280" height="640" alt="EasyPwd showing a list of logins and the generated password for github.com">
     </section>
 
     <section id="how" class="wrap">
-      <h2>How it works</h2>
-      <ol class="steps">
-        <li><strong>Enter your email and a passphrase.</strong> EasyPwd shows four words, your key fingerprint. Write them down.</li>
-        <li><strong>Type a website and press Enter.</strong> <code>github.com</code>, <code>https://www.github.com/login</code> and <code>GitHub.com</code> all give the same password.</li>
-        <li><strong>On a new device, do the same.</strong> If the four words match, every password matches. If they don't, you made a typo.</li>
+      <h2 class="reveal">How it works</h2>
+      <ol class="steps" data-stagger>
+        <li class="reveal"><strong>Enter your email and a passphrase.</strong> EasyPwd shows four words, your key fingerprint. Write them down.</li>
+        <li class="reveal"><strong>Type a website and press Enter.</strong> <code>github.com</code>, <code>https://www.github.com/login</code> and <code>GitHub.com</code> all give the same password.</li>
+        <li class="reveal"><strong>On a new device, do the same.</strong> If the four words match, every password matches. If they don't, you made a typo.</li>
       </ol>
-      <pre class="diagram" aria-label="Key derivation diagram">email + passphrase ── PBKDF2 · 600k ──► root key ──┬─ HKDF ─► site key ── HMAC(site, version, rules) ─► password
+      <pre class="diagram reveal" aria-label="Key derivation diagram">email + passphrase ── PBKDF2 · 600k ──► root key ──┬─ HKDF ─► site key ── HMAC(site, version, rules) ─► password
                                                   ├─ HKDF ─► vault key (AES-256-GCM, saved logins)
                                                   └─ HKDF ─► four-word fingerprint</pre>
     </section>
 
     <section class="wrap">
-      <h2>What a plain password generator gets wrong</h2>
-      <p class="muted">Calculated passwords are an old idea. These are the problems that usually make people give up on them, and what EasyPwd does about each one.</p>
-      <div class="grid">
-        <article><h3>A site gets breached</h3><p>Every site has a version. Click <em>New password</em> to move to the next one. The old password stays visible until you've changed it on the site.</p></article>
-        <article><h3>"Max 16 characters, no symbols"</h3><p>Length and character types are set per site, so awkward password rules aren't a problem.</p></article>
-        <article><h3>Passwords you can't change</h3><p>Existing accounts, PINs and Wi‑Fi keys go into a local vault encrypted with AES‑256‑GCM.</p></article>
-        <article><h3>A typo in the master key</h3><p>The four-word fingerprint catches it right away, instead of letting you discover it at a login screen.</p></article>
+      <h2 class="reveal">What a plain password generator gets wrong</h2>
+      <p class="muted reveal">Calculated passwords are an old idea. These are the problems that usually make people give up on them, and what EasyPwd does about each one.</p>
+      <div class="grid" data-stagger>
+        <article class="reveal"><h3>A site gets breached</h3><p>Every site has a version. Click <em>New password</em> to move to the next one. The old password stays visible until you've changed it on the site.</p></article>
+        <article class="reveal"><h3>"Max 16 characters, no symbols"</h3><p>Length and character types are set per site, so awkward password rules aren't a problem.</p></article>
+        <article class="reveal"><h3>Passwords you can't change</h3><p>Existing accounts, PINs and Wi‑Fi keys go into a local vault encrypted with AES‑256‑GCM.</p></article>
+        <article class="reveal"><h3>A typo in the master key</h3><p>The four-word fingerprint catches it right away, instead of letting you discover it at a login screen.</p></article>
       </div>
     </section>
 
     <section id="try" class="wrap">
-      <h2>Try the algorithm</h2>
-      <p class="muted">This runs the extension's own code in this page. Nothing leaves your browser, but use made-up values here, not your real passphrase.</p>
-      <form id="demo" class="demo" autocomplete="off">
+      <h2 class="reveal">Try the algorithm</h2>
+      <p class="muted reveal">This runs the extension's own code in this page. Nothing leaves your browser, but use made-up values here, not your real passphrase.</p>
+      <form id="demo" class="demo reveal" autocomplete="off">
         <label>Email or name<input id="d-identity" value="ada@example.com" spellcheck="false"></label>
         <label>Passphrase<input id="d-pass" value="correct horse battery staple" spellcheck="false"></label>
         <label>Website<input id="d-site" value="github.com" spellcheck="false"></label>
@@ -77,15 +81,15 @@
     </section>
 
     <section id="security" class="wrap">
-      <h2>Security, without the marketing</h2>
+      <h2 class="reveal">Security, without the marketing</h2>
       <div class="cols">
-        <ul class="checks">
-          <li>No network access. The extension's security policy blocks all connections.</li>
-          <li>Two permissions: <code>storage</code> and <code>clipboardWrite</code>.</li>
-          <li>Zero dependencies. Only the browser's built-in Web Crypto.</li>
-          <li>The algorithm is <a href="https://github.com/xianyangwong/easypwd/blob/master/SECURITY.md#generated-passwords">published as a spec</a> with test vectors, and tested against an independent implementation.</li>
+        <ul class="checks" data-stagger>
+          <li class="reveal">No network access. The extension's security policy blocks all connections.</li>
+          <li class="reveal">Two permissions: <code>storage</code> and <code>clipboardWrite</code>.</li>
+          <li class="reveal">Zero dependencies. Only the browser's built-in Web Crypto.</li>
+          <li class="reveal">The algorithm is <a href="https://github.com/xianyangwong/easypwd/blob/master/SECURITY.md#generated-passwords">published as a spec</a> with test vectors, and tested against an independent implementation.</li>
         </ul>
-        <div class="note">
+        <div class="note reveal">
           <h3>The tradeoff</h3>
           <p>Anyone who learns your passphrase and email can calculate every generated password, without needing your vault. A single leaked site password also lets an attacker test passphrase guesses offline. Use a long passphrase of several unrelated words, and don't reuse it.</p>
           <p>EasyPwd has not been independently audited.</p>
