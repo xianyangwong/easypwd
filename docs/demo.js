@@ -2,6 +2,7 @@ import { deriveKeys, derivePassword, normalizeSite, estimateBits, GROUPS } from 
 import { scramble } from './motion.js';
 
 const $ = (id) => document.getElementById(id);
+const t = (key, vars) => window.i18n?.t(key, vars) ?? key;
 const SALT = 'AAAAAAAAAAAAAAAAAAAAAA==';
 const form = $('demo');
 let keyCache = { id: '', key: null };
@@ -35,14 +36,14 @@ function setBusy(busy) {
   form.classList.toggle('busy-state', busy);
   if (busy) {
     $('d-fp').replaceChildren(...Array.from({ length: 4 }, () => document.createElement('span')));
-    $('d-pw').textContent = 'Running 600,000 PBKDF2 rounds…';
+    $('d-pw').textContent = t('busy');
     shown = { fp: '', pw: '' };
   }
 }
 
 function setStrength(length, list) {
   const bits = estimateBits(length, list);
-  $('d-bits').textContent = `≈ ${bits} bits of entropy`;
+  $('d-bits').textContent = t('bits', { n: bits });
   $('d-bar').style.width = `${Math.min(100, (bits / 128) * 100)}%`;
   $('d-bar').dataset.level = bits < 60 ? 'weak' : bits < 90 ? 'ok' : 'strong';
 }
@@ -73,7 +74,7 @@ async function update({ rotated = false } = {}) {
       shown.fp = keyCache.key.fingerprint;
       showWords(shown.fp);
     }
-    if (!site) throw new Error('Enter a website.');
+    if (!site) throw new Error(t('noSite'));
     const previous = shown.pw;
     const password = await derivePassword(keyCache.key.siteKey, { site, counter, length, groups: list });
     if (current !== run || password === shown.pw) return;
@@ -81,7 +82,7 @@ async function update({ rotated = false } = {}) {
     if (rotated && previous) {
       $('d-old').innerHTML = '';
       $('d-old').append(`v${counter - 1} `, Object.assign(document.createElement('s'), { textContent: previous }),
-        ' still shown until you update the site');
+        Object.assign(document.createElement('span'), { className: 'old-note', textContent: t('old') }));
     }
     const pw = $('d-pw');
     scramble(pw, password, 700, () => { if (shown.pw === password) colorize(pw, password); });
@@ -128,13 +129,23 @@ $('d-eye').addEventListener('click', () => {
   const show = input.type === 'password';
   input.type = show ? 'text' : 'password';
   $('d-eye').setAttribute('aria-pressed', String(show));
-  $('d-eye').setAttribute('aria-label', show ? 'Hide passphrase' : 'Show passphrase');
+  $('d-eye').setAttribute('aria-label', t(show ? 'hidePass' : 'showPass'));
 });
 $('d-copy').addEventListener('click', async () => {
   if (!shown.pw) return;
   await navigator.clipboard.writeText(shown.pw);
-  $('d-copy').textContent = 'Copied';
-  setTimeout(() => { $('d-copy').textContent = 'Copy'; }, 1400);
+  $('d-copy').textContent = t('copied');
+  setTimeout(() => { $('d-copy').textContent = t('copy'); }, 1400);
 });
 
+document.addEventListener('langchange', () => {
+  $('d-copy').textContent = t('copy');
+  $('d-eye').setAttribute('aria-label', t($('d-pass').type === 'text' ? 'hidePass' : 'showPass'));
+  const note = $('d-old').querySelector('.old-note');
+  if (note) note.textContent = t('old');
+  update({ rotated: true });
+});
+
+$('d-copy').textContent = t('copy');
+$('d-eye').setAttribute('aria-label', t('showPass'));
 update();
