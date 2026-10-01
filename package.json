@@ -1,16 +1,16 @@
 {
   "name": "easypwd",
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "description": "An offline-first Chrome extension with a local encrypted password vault.",
+  "license": "MIT",
   "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
+  "type": "module",
+  "engines": {
+    "node": ">=22"
   },
-  "dependencies": {
-    "crypto-js": "^4.0.0",
-    "next": "9.5.3",
-    "react": "16.13.1",
-    "react-dom": "16.13.1"
+  "scripts": {
+    "test": "node --test",
+    "check": "node scripts/check.js",
+    "build": "node scripts/build.js"
   }
 }

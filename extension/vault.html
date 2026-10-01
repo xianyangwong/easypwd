@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>EasyPwd</title>
+  <link rel="icon" href="icons/32.png">
+  <link rel="stylesheet" href="vault.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" hidden>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3L20 3M16 7l3 3M13.5 9.5l2 2"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.4-5.7L20 8.6"/><path d="M20 3v5.6h-5.6"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3l10 18H2L12 3z"/><path d="M12 10v5M12 18h.01"/></symbol>
+  </svg>
+
+  <section id="lock-screen" class="lock">
+    <div class="lock-card">
+      <svg class="logo logo-lg" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8"/><circle cx="16" cy="13.5" r="4.2"/><path d="M14 16.5h4l1 7.5h-6z"/></svg>
+      <h1 id="lock-title">EasyPwd</h1>
+      <p id="lock-subtitle" class="muted"></p>
+      <form id="access-form" novalidate>
+        <div id="identity-wrap" hidden>
+          <label for="identity" class="sr-only">Email or name</label>
+          <input id="identity" autocomplete="username" spellcheck="false" maxlength="256" placeholder="Email or name">
+          <p class="hint">Use the same one on every device. Together with your passphrase it generates your passwords.</p>
+        </div>
+        <label for="master" class="sr-only">Master passphrase</label>
+        <div class="input-group">
+          <input id="master" type="password" autocomplete="off" spellcheck="false" maxlength="1024" placeholder="Master passphrase">
+          <button id="toggle-master" type="button" class="icon-btn" aria-label="Show passphrase" aria-pressed="false"><svg class="icon"><use href="#i-eye"/></svg></button>
+        </div>
+        <div id="confirm-wrap" hidden>
+          <label for="confirm-master" class="sr-only">Confirm master passphrase</label>
+          <input id="confirm-master" type="password" autocomplete="off" spellcheck="false" maxlength="1024" placeholder="Confirm passphrase">
+          <p class="hint">At least 15 characters. A few unrelated words are easy to remember and hard to guess.</p>
+        </div>
+        <p id="caps" class="warn-text" hidden><svg class="icon icon-sm"><use href="#i-warn"/></svg> Caps Lock is on</p>
+        <p id="access-error" class="error-text" role="alert"></p>
+        <label id="ack-wrap" class="check" hidden><input id="ack" type="checkbox"> I understand EasyPwd can’t recover this passphrase if I forget it.</label>
+        <button id="access-submit" class="btn primary block" type="submit">Unlock</button>
+      </form>
+      <div class="lock-links">
+        <button id="restore-link" type="button" class="link">Restore from backup</button>
+        <button id="reset-link" type="button" class="link">Forgot passphrase?</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="app" class="app" hidden>
+    <nav class="sidebar" aria-label="Main">
+      <div class="brand"><svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8"/><circle cx="16" cy="13.5" r="4.2"/><path d="M14 16.5h4l1 7.5h-6z"/></svg><span class="label">EasyPwd</span></div>
+      <button id="nav-items" class="nav-btn" type="button" data-view="items"><svg class="icon"><use href="#i-key"/></svg><span class="label">Logins</span></button>
+      <button id="nav-generator" class="nav-btn" type="button" data-view="generator"><svg class="icon"><use href="#i-refresh"/></svg><span class="label">Generator</span></button>
+      <button id="nav-settings" class="nav-btn" type="button" data-view="settings"><svg class="icon"><use href="#i-settings"/></svg><span class="label">Settings</span></button>
+      <div class="spacer"></div>
+      <button id="lock-btn" class="nav-btn" type="button"><svg class="icon"><use href="#i-lock"/></svg><span class="label">Lock</span></button>
+    </nav>
+
+    <main id="view-items" class="items-view">
+      <section class="list-pane" aria-label="Logins">
+        <div class="list-head">
+          <div class="search">
+            <svg class="icon icon-sm"><use href="#i-search"/></svg>
+            <label for="search" class="sr-only">Search logins</label>
+            <input id="search" type="search" placeholder="Search" autocomplete="off" spellcheck="false">
+          </div>
+          <button id="new-entry" type="button" class="btn primary icon-only" aria-label="New login" title="New login"><svg class="icon"><use href="#i-plus"/></svg></button>
+        </div>
+        <button id="backup-nudge" type="button" class="nudge" hidden>You haven’t backed up this vault yet. <span>Export a backup</span></button>
+        <ul id="entries" class="item-list"></ul>
+        <p id="list-empty" class="empty"></p>
+        <button id="create-from-search" type="button" class="btn suggest" hidden></button>
+        <p id="item-count" class="list-foot"></p>
+      </section>
+
+      <section class="detail-pane" aria-label="Login details">
+        <div id="detail-empty" class="empty detail-placeholder">
+          <svg class="icon icon-xl"><use href="#i-key"/></svg>
+          <p>Select a login to see its details.</p>
+        </div>
+
+        <article id="detail-view" class="detail" hidden>
+          <header class="detail-head">
+            <button id="detail-back" type="button" class="icon-btn mobile-only" aria-label="Back to list"><svg class="icon"><use href="#i-back"/></svg></button>
+            <span id="dv-avatar" class="avatar avatar-lg" aria-hidden="true"></span>
+            <div class="detail-title">
+              <h1 id="dv-name"></h1>
+              <p class="muted"><span id="dv-host"></span><span id="dv-badge" class="badge" hidden>Generated</span></p>
+            </div>
+            <button id="dv-edit" type="button" class="btn">Edit</button>
+          </header>
+          <dl class="fields">
+            <div id="dv-username-row" class="field">
+              <dt>Username</dt>
+              <dd id="dv-username"></dd>
+              <div class="field-actions"><button type="button" class="icon-btn" data-copy="username" aria-label="Copy username" title="Copy"><svg class="icon"><use href="#i-copy"/></svg></button></div>
+            </div>
+            <div class="field">
+              <dt>Password</dt>
+              <dd id="dv-password" class="mono"></dd>
+              <div class="field-actions">
+                <button id="dv-reveal" type="button" class="icon-btn" aria-label="Show password" aria-pressed="false" title="Show"><svg class="icon"><use href="#i-eye"/></svg></button>
+                <button type="button" class="icon-btn" data-copy="password" aria-label="Copy password" title="Copy"><svg class="icon"><use href="#i-copy"/></svg></button>
+              </div>
+            </div>
+            <div id="dv-prev-row" class="field">
+              <dt id="dv-prev-label">Previous password</dt>
+              <dd id="dv-prev" class="mono"></dd>
+              <div class="field-actions"><button type="button" class="icon-btn" data-copy="previous" aria-label="Copy previous password" title="Copy"><svg class="icon"><use href="#i-copy"/></svg></button></div>
+            </div>
+            <div id="dv-url-row" class="field">
+              <dt>Website</dt>
+              <dd><a id="dv-url" target="_blank" rel="noopener noreferrer"></a></dd>
+              <div class="field-actions"><button type="button" class="icon-btn" data-copy="url" aria-label="Copy website" title="Copy"><svg class="icon"><use href="#i-copy"/></svg></button></div>
+            </div>
+            <div id="dv-notes-row" class="field field-block">
+              <dt>Notes</dt>
+              <dd id="dv-notes" class="notes"></dd>
+            </div>
+          </dl>
+          <div id="dv-generated" class="gen-info">
+            <p id="dv-rules" class="muted small"></p>
+            <button id="dv-rotate" type="button" class="btn"><svg class="icon icon-sm"><use href="#i-refresh"/></svg>New password</button>
+          </div>
+          <ul id="dv-warnings" class="warnings"></ul>
+          <footer class="detail-foot">
+            <p id="dv-updated" class="muted"></p>
+            <button id="dv-delete" type="button" class="btn ghost danger">Delete login</button>
+          </footer>
+        </article>
+
+        <form id="entry-form" class="detail editor" hidden novalidate>
+          <header class="detail-head">
+            <button id="form-back" type="button" class="icon-btn mobile-only" aria-label="Cancel"><svg class="icon"><use href="#i-back"/></svg></button>
+            <h1 id="form-title">New login</h1>
+          </header>
+          <div class="segmented" role="radiogroup" aria-label="Password type">
+            <label><input type="radio" name="entry-mode" value="generated" checked><span>Generated</span></label>
+            <label><input type="radio" name="entry-mode" value="saved"><span>Saved</span></label>
+          </div>
+          <p id="mode-hint" class="muted small mode-hint"></p>
+          <div class="form-grid">
+            <div id="gen-fields" class="contents">
+              <label for="entry-site">Website</label>
+              <input id="entry-site" maxlength="1024" autocomplete="off" spellcheck="false" placeholder="github.com">
+            </div>
+            <label for="entry-name">Name</label>
+            <input id="entry-name" maxlength="1024" autocomplete="off" placeholder="e.g. GitHub">
+            <label for="entry-username">Username</label>
+            <input id="entry-username" maxlength="1024" autocomplete="off" spellcheck="false" placeholder="Email or username">
+            <div id="gen-fields-2" class="contents">
+              <label for="entry-preview">Password</label>
+              <div class="preview">
+                <output id="entry-preview" for="entry-site entry-length entry-counter" class="mono"></output>
+                <button id="preview-copy" type="button" class="icon-btn" aria-label="Copy password" title="Copy"><svg class="icon"><use href="#i-copy"/></svg></button>
+              </div>
+              <span class="label-like">Rules</span>
+              <div class="rules">
+                <label class="inline">Length <input id="entry-length" type="number" min="8" max="64" value="20"></label>
+                <label class="check"><input type="checkbox" name="entry-group" value="lowercase" checked> a–z</label>
+                <label class="check"><input type="checkbox" name="entry-group" value="uppercase" checked> A–Z</label>
+                <label class="check"><input type="checkbox" name="entry-group" value="digits" checked> 0–9</label>
+                <label class="check"><input type="checkbox" name="entry-group" value="symbols" checked> !@#$</label>
+                <label class="inline">Version <input id="entry-counter" type="number" min="1" max="1000000" value="1"></label>
+              </div>
+            </div>
+            <div id="saved-fields" class="contents">
+              <label for="entry-password">Password</label>
+              <div class="input-row">
+                <div class="input-group">
+                  <input id="entry-password" type="password" maxlength="1024" autocomplete="off" spellcheck="false" class="mono">
+                  <button id="toggle-entry-password" type="button" class="icon-btn" aria-label="Show password" aria-pressed="false"><svg class="icon"><use href="#i-eye"/></svg></button>
+                </div>
+                <button id="fill-generated" type="button" class="btn">Random</button>
+              </div>
+              <label for="entry-url">Website</label>
+              <input id="entry-url" maxlength="1024" autocomplete="off" spellcheck="false" placeholder="example.com">
+            </div>
+            <label for="entry-notes">Notes</label>
+            <textarea id="entry-notes" maxlength="4000" rows="4"></textarea>
+          </div>
+          <p id="entry-derive-warn" class="warn-text form-warn" hidden><svg class="icon icon-sm"><use href="#i-warn"/></svg> This changes the password. Update it on the website too.</p>
+          <p id="form-error" class="error-text" role="alert"></p>
+          <div class="form-actions">
+            <button id="cancel-edit" type="button" class="btn">Cancel</button>
+            <button type="submit" class="btn primary">Save</button>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <main id="view-generator" class="page" hidden>
+      <div class="page-inner">
+        <h1>Password generator</h1>
+        <p class="muted">Generated locally with the browser’s cryptographic random number generator.</p>
+        <div class="gen-output">
+          <label for="gen-value" class="sr-only">Generated password</label>
+          <input id="gen-value" class="mono" readonly spellcheck="false">
+          <button id="gen-refresh" type="button" class="icon-btn" aria-label="Generate another" title="Generate another"><svg class="icon"><use href="#i-refresh"/></svg></button>
+          <button id="gen-copy" type="button" class="btn primary">Copy</button>
+        </div>
+        <p id="gen-bits" class="muted small"></p>
+        <div class="card">
+          <div class="setting">
+            <label for="gen-length">Length</label>
+            <div class="range"><input id="gen-length" type="range" min="8" max="64" value="20"><output id="gen-length-value" for="gen-length">20</output></div>
+          </div>
+          <fieldset class="setting">
+            <legend>Characters</legend>
+            <div class="toggles">
+              <label class="check"><input type="checkbox" name="gen-group" value="lowercase" checked> a–z</label>
+              <label class="check"><input type="checkbox" name="gen-group" value="uppercase" checked> A–Z</label>
+              <label class="check"><input type="checkbox" name="gen-group" value="digits" checked> 0–9</label>
+              <label class="check"><input type="checkbox" name="gen-group" value="symbols" checked> !@#$</label>
+            </div>
+          </fieldset>
+        </div>
+      </div>
+    </main>
+
+    <main id="view-settings" class="page" hidden>
+      <div class="page-inner">
+        <h1>Settings</h1>
+
+        <h2>Your key</h2>
+        <div class="card">
+          <div class="setting">
+            <div><h3>Identity</h3><p id="set-identity" class="muted"></p></div>
+          </div>
+          <div class="setting">
+            <div><h3>Key fingerprint</h3><p class="muted">Same email and passphrase on another device show the same words and generate the same passwords.</p></div>
+            <span id="set-fingerprint" class="fingerprint"></span>
+          </div>
+        </div>
+
+        <h2>Security</h2>
+        <div class="card">
+          <div class="setting">
+            <div><h3><label for="autolock">Auto-lock</label></h3><p class="muted">Lock the vault after a period of inactivity.</p></div>
+            <select id="autolock">
+              <option value="1">After 1 minute</option>
+              <option value="5">After 5 minutes</option>
+              <option value="15">After 15 minutes</option>
+              <option value="30">After 30 minutes</option>
+            </select>
+          </div>
+          <div class="setting">
+            <div><h3>Master passphrase</h3><p class="muted">Changing it changes every generated password, so EasyPwd saves their current values first.</p></div>
+            <button id="open-change-pass" type="button" class="btn">Change…</button>
+          </div>
+        </div>
+
+        <h2>Backup &amp; import</h2>
+        <div class="card">
+          <div class="setting">
+            <div><h3>Export encrypted backup</h3><p id="last-backup" class="muted"></p></div>
+            <button id="export" type="button" class="btn">Export</button>
+          </div>
+          <div class="setting">
+            <div><h3>Restore from backup</h3><p class="muted">Replaces the vault in this browser.</p></div>
+            <button id="open-restore" type="button" class="btn">Restore…</button>
+          </div>
+          <div class="setting">
+            <div><h3>Import from Chrome</h3><p class="muted">Add logins from a Google Password Manager CSV export. Delete the CSV afterwards; it isn’t encrypted.</p></div>
+            <button id="open-import" type="button" class="btn">Import CSV…</button>
+            <input id="import-file" type="file" accept=".csv,text/csv" hidden>
+          </div>
+        </div>
+
+        <h2>Danger zone</h2>
+        <div class="card">
+          <div class="setting">
+            <div><h3>Delete vault</h3><p class="muted">Permanently removes the vault from this browser.</p></div>
+            <button id="open-reset" type="button" class="btn danger">Delete…</button>
+          </div>
+        </div>
+
+        <p class="about muted">EasyPwd 0.2.0 · Works offline, no network access · <a href="https://github.com/xianyangwong/easypwd" target="_blank" rel="noopener noreferrer">Source code</a></p>
+      </div>
+    </main>
+  </div>
+
+  <dialog id="confirm-dialog" aria-labelledby="confirm-title">
+    <form method="dialog">
+      <h2 id="confirm-title"></h2>
+      <p id="confirm-body" class="muted"></p>
+      <div class="dialog-actions">
+        <button value="cancel" class="btn">Cancel</button>
+        <button id="confirm-ok" value="ok" class="btn primary danger-fill"></button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="restore-dialog" aria-labelledby="restore-title">
+    <form id="restore-form" novalidate>
+      <h2 id="restore-title">Restore from backup</h2>
+      <p id="restore-body" class="muted"></p>
+      <label for="restore-file">Backup file</label>
+      <input id="restore-file" type="file" accept=".json,application/json">
+      <label for="restore-pass">Backup’s master passphrase</label>
+      <input id="restore-pass" type="password" autocomplete="off" maxlength="1024">
+      <div id="restore-identity-wrap" class="dialog-field" hidden>
+        <label for="restore-identity">Email or name</label>
+        <input id="restore-identity" autocomplete="off" spellcheck="false" maxlength="256">
+        <p class="hint">This backup is from an older version. Enter the email or name to use for generated passwords.</p>
+      </div>
+      <p id="restore-error" class="error-text" role="alert"></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn" data-close>Cancel</button>
+        <button id="restore-submit" type="submit" class="btn primary">Restore</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="pass-dialog" aria-labelledby="pass-title">
+    <form id="pass-form" novalidate>
+      <h2 id="pass-title">Change master passphrase</h2>
+      <label for="cp-current">Current passphrase</label>
+      <input id="cp-current" type="password" autocomplete="off" maxlength="1024">
+      <label for="cp-new">New passphrase</label>
+      <input id="cp-new" type="password" autocomplete="off" maxlength="1024" placeholder="At least 15 characters">
+      <label for="cp-confirm">Confirm new passphrase</label>
+      <input id="cp-confirm" type="password" autocomplete="off" maxlength="1024">
+      <p id="cp-note" class="warn-text" hidden></p>
+      <p id="cp-error" class="error-text" role="alert"></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn" data-close>Cancel</button>
+        <button type="submit" class="btn primary">Change passphrase</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="reset-dialog" aria-labelledby="reset-title">
+    <form id="reset-form" novalidate>
+      <h2 id="reset-title">Delete this vault?</h2>
+      <p class="muted">The encrypted vault will be permanently removed from this browser. Without the master passphrase, the only way to get your logins back is a backup.</p>
+      <label for="reset-confirm">Type <strong>DELETE</strong> to confirm</label>
+      <input id="reset-confirm" autocomplete="off" spellcheck="false">
+      <p id="reset-error" class="error-text" role="alert"></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn" data-close>Cancel</button>
+        <button type="submit" class="btn primary danger-fill">Delete vault</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="fp-dialog" aria-labelledby="fp-title">
+    <form method="dialog">
+      <h2 id="fp-title">Your key fingerprint</h2>
+      <p class="fingerprint fingerprint-lg" id="fp-words"></p>
+      <p class="muted">Write these four words down. When you set up EasyPwd on another device with <strong id="fp-identity"></strong> and the same passphrase, you’ll see the same words and get the same generated passwords. Different words mean a typo.</p>
+      <div class="dialog-actions">
+        <button value="ok" class="btn primary">Got it</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
