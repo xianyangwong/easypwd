@@ -3,9 +3,9 @@ const GLYPHS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!#$%&*+
 const running = new WeakMap();
 
 // Reveal text by cycling random glyphs that settle left to right.
-export function scramble(el, text, duration = 650) {
+export function scramble(el, text, duration = 650, done) {
   cancelAnimationFrame(running.get(el));
-  if (reduced) { el.textContent = text; return; }
+  if (reduced) { el.textContent = text; done?.(); return; }
   const start = performance.now();
   const frame = (now) => {
     const settled = Math.floor(((now - start) / duration) * text.length);
@@ -15,6 +15,7 @@ export function scramble(el, text, duration = 650) {
     }
     el.textContent = out;
     if (settled < text.length) running.set(el, requestAnimationFrame(frame));
+    else done?.();
   };
   running.set(el, requestAnimationFrame(frame));
 }
