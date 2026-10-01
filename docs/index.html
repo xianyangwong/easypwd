@@ -47,19 +47,42 @@
         <li class="reveal"><strong>Type a website and press Enter.</strong> <code>github.com</code>, <code>https://www.github.com/login</code> and <code>GitHub.com</code> all give the same password.</li>
         <li class="reveal"><strong>On a new device, do the same.</strong> If the four words match, every password matches. If they don't, you made a typo.</li>
       </ol>
-      <pre class="diagram reveal" aria-label="Key derivation diagram">email + passphrase ── PBKDF2 · 600k ──► root key ──┬─ HKDF ─► site key ── HMAC(site, version, rules) ─► password
-                                                  ├─ HKDF ─► vault key (AES-256-GCM, saved logins)
-                                                  └─ HKDF ─► four-word fingerprint</pre>
+      <div class="flow-wrap reveal">
+        <div class="flow" data-stagger role="img" aria-label="Email and passphrase go through PBKDF2 with 600,000 iterations to make a root key. HKDF splits the root key into a site key, which HMAC turns into each site's password; a vault key, which encrypts saved logins with AES-256-GCM; and a four-word fingerprint.">
+          <div class="node input"><small>You type</small><b>email</b><b>passphrase</b></div>
+          <div class="edge main"><span>PBKDF2 · 600k</span></div>
+          <div class="node root"><small>Root key</small><b>256-bit</b></div>
+          <div class="fork"></div>
+          <div class="branch">
+            <div class="edge"><span>HKDF</span></div>
+            <div class="node"><b>Site key</b></div>
+            <div class="edge"><span>HMAC(site, version, rules)</span></div>
+            <div class="node result"><small>github.com password</small><code>Um{GT&amp;=2yz$:C[#j9}zk</code></div>
+          </div>
+          <div class="branch">
+            <div class="edge"><span>HKDF</span></div>
+            <div class="node"><b>Vault key</b></div>
+            <div class="edge"><span>AES-256-GCM</span></div>
+            <div class="node result"><small>Saved logins</small><code>encrypted, local only</code></div>
+          </div>
+          <div class="branch">
+            <div class="edge"><span>HKDF</span></div>
+            <div class="node"><b>Fingerprint</b></div>
+            <div class="edge"><span>4 words</span></div>
+            <div class="node result"><small>Check on every device</small><code>raven delta kayak sierra</code></div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="wrap">
       <h2 class="reveal">What a plain password generator gets wrong</h2>
-      <p class="muted reveal">Calculated passwords are an old idea. These are the problems that usually make people give up on them, and what EasyPwd does about each one.</p>
+      <p class="muted reveal">Calculated passwords are an old idea. Here is what usually goes wrong, and the fix.</p>
       <div class="grid" data-stagger>
-        <article class="reveal"><h3>A site gets breached</h3><p>Every site has a version. Click <em>New password</em> to move to the next one. The old password stays visible until you've changed it on the site.</p></article>
-        <article class="reveal"><h3>"Max 16 characters, no symbols"</h3><p>Length and character types are set per site, so awkward password rules aren't a problem.</p></article>
-        <article class="reveal"><h3>Passwords you can't change</h3><p>Existing accounts, PINs and Wi‑Fi keys go into a local vault encrypted with AES‑256‑GCM.</p></article>
-        <article class="reveal"><h3>A typo in the master key</h3><p>The four-word fingerprint catches it right away, instead of letting you discover it at a login screen.</p></article>
+        <article class="reveal spin"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></svg></span><h3>A site gets breached</h3><p>Bump its version for a fresh password.</p></article>
+        <article class="reveal slide"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></span><h3>Picky password rules</h3><p>Set length and symbols per site.</p></article>
+        <article class="reveal shake"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><h3>Passwords you can't change</h3><p>Keep them in an encrypted local vault.</p></article>
+        <article class="reveal pop"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="m9 12 2 2 4-4"/></svg></span><h3>A typo in your passphrase</h3><p>Four words flag it instantly.</p></article>
       </div>
     </section>
 
