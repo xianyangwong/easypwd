@@ -9,6 +9,8 @@ email and passphrase, and you get the same passwords. Passwords you can't
 change are kept in a local encrypted vault. No account, server, cloud sync,
 analytics, or website access.
 
+**Website and live demo:** https://xianyangwong.github.io/easypwd/
+
 ![EasyPwd vault with a list of logins and a selected login's details](docs/screenshot.png)
 
 **Status: preview. Not independently security-audited. Use test
@@ -169,6 +171,9 @@ npm run build
 The build packages runtime files and the license in `dist/easypwd`, which can also be loaded
 unpacked. Reload the extension on `chrome://extensions` after changing source,
 then close/reopen the vault page. Export a backup before updating.
+
+`npm run build` also copies `extension/crypto.js` to `docs/crypto.js`, which the
+website demo uses; `check` fails if they differ.
 
 Tests cover pinned derivation vectors, an independent reference implementation,
 site and identity normalization, format 1 migration, encrypted round trips,

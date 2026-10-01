@@ -25,4 +25,8 @@ for (const file of await readdir(extension)) {
 if (/\b(?:fetch|XMLHttpRequest|eval)\s*\(|innerHTML\s*=/.test(app)) {
   throw new Error('Unexpected network, dynamic execution, or HTML injection API.');
 }
+if (await readFile(new URL('crypto.js', extension), 'utf8') !==
+    await readFile(new URL('../docs/crypto.js', import.meta.url), 'utf8')) {
+  throw new Error('docs/crypto.js is out of date. Run npm run build.');
+}
 console.log('Extension syntax, DOM references, permissions, and network policy checked.');

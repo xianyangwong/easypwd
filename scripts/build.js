@@ -7,4 +7,6 @@ await mkdir(`${root}dist`, { recursive: true });
 await rm(destination, { recursive: true, force: true });
 await cp(`${root}extension`, destination, { recursive: true });
 await cp(`${root}LICENSE`, `${destination}/LICENSE`);
+// The website demo runs the same derivation code as the extension.
+await cp(`${root}extension/crypto.js`, `${root}docs/crypto.js`);
 console.log(`EasyPwd extension built in dist/easypwd (${(await readdir(destination)).length} files).`);
