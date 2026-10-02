@@ -212,6 +212,27 @@ generation, concurrent writes and deletes, and failed storage writes.
 `check` verifies JavaScript syntax, DOM references, permissions, and the network
 policy. See [CONTRIBUTING.md](CONTRIBUTING.md) for manual acceptance checks.
 
+### Releasing
+
+1. Bump `version` in both `extension/manifest.json` and `package.json`, then commit.
+2. Create a GitHub release with tag `vX.Y.Z` (for example `gh release create v0.4.0 --generate-notes`).
+
+The [Release workflow](.github/workflows/release.yml) tests the code, checks that
+the tag matches both versions, attaches `easypwd-X.Y.Z.zip` to the release, uploads
+it to the Chrome Web Store, and submits it for review. A pre-release only uploads a
+draft. To retry, run the workflow manually with the tag.
+
+It needs these repository secrets:
+
+- `CWS_PUBLISHER_ID`: shown in the Developer Dashboard under **Publisher > Settings**.
+- `CWS_SERVICE_ACCOUNT_KEY`: the JSON key of a Google Cloud service account. Enable
+  the Chrome Web Store API in a Google Cloud project, create a service account and a
+  JSON key for it, then add its email in the Developer Dashboard under **Account**.
+
+Instead of a service account, you can set `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, and
+`CWS_REFRESH_TOKEN` from an OAuth client
+([guide](https://developer.chrome.com/docs/webstore/using-api)).
+
 ## Upgrading
 
 - **From EasyPwd 0.1 (format 1 vaults).** Unlocking asks for an email or name
