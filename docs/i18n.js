@@ -50,7 +50,7 @@
     priv4: '扩展不发出任何网络请求。没有统计、广告、追踪、账号或服务器，也无法访问你浏览的网站。',
     priv5: '备份是你自己导出、自己保管的文件。',
     priv6: '卸载扩展或点击 <strong>Forgot passphrase?</strong> 会删除本地保险库。',
-    priv7: '本网站没有 Cookie，也没有统计。<a href="./#try">演示</a>完全在你的浏览器中运行。',
+    priv7: '本网站（不是扩展）使用 Google Analytics 统计访问量，会设置 Cookie。<a href="./#try">演示</a>完全在你的浏览器中运行，你输入的内容不会发送到任何地方。',
     priv8: '有问题？<a href="https://github.com/xianyangwong/easypwd/issues">在 GitHub 上提 issue</a>。',
   };
   const runtime = {
