@@ -349,3 +349,13 @@ dialog label { margin-top: 6px; font-size: 13px; color: var(--muted); }
   .setting { flex-wrap: wrap; }
   .range { width: 100%; }
 }
+
+.field-hint { margin-top: 6px; }
+.otp { display: flex; align-items: center; gap: 10px; }
+.otp .mono { font-size: 18px; letter-spacing: 0.06em; }
+.otp-timer {
+  --p: 1;
+  width: 16px; height: 16px; border-radius: 50%; flex: none;
+  background: conic-gradient(var(--accent) calc(var(--p) * 360deg), var(--surface-2) 0);
+}
+.otp-timer.low { background: conic-gradient(var(--danger) calc(var(--p) * 360deg), var(--surface-2) 0); }

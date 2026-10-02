@@ -151,6 +151,13 @@ is persisted.
 
 The vault page owns the unlocked session. No key is stored in local or session
 storage, and no key/credential messages are sent to the background worker.
+The toolbar popup can send `easypwd:lookup` with the current site to an open,
+unlocked vault page. The vault page answers only messages whose sender is this
+extension, not a tab, and the `popup.html` URL. It replies with the matching
+logins' usernames, passwords, and current 2FA codes, plus a generated password
+suggestion for the site. A locked page does not reply. Answering counts as
+activity for auto-lock. If no page answers, the popup can unlock the vault
+itself; that session lives only in the popup's memory and ends when it closes.
 Manual lock removes application references and clears secret-bearing DOM fields.
 The page locks after a user-selected period (1, 5, 15, or 30 minutes; default
 5) without trusted user activity. This setting is stored unencrypted. Suspended
@@ -179,5 +186,31 @@ only. The file is not stored or uploaded; users should delete it afterwards.
 
 The extension restricts local storage to trusted extension contexts and sets
 `connect-src 'none'`. It uses DOM text nodes, not injected credential HTML.
-There are no website permissions, content scripts, remote assets, analytics,
-or automatic clipboard clearing.
+There are no host permissions, persistent content scripts, remote assets,
+analytics, or automatic clipboard clearing.
+
+## Filling pages
+
+`activeTab` gives the popup the current tab's URL and temporary access to it
+only after the user clicks the toolbar icon or presses its shortcut. **Fill**
+re-reads the tab, refuses if its host has changed, and uses `scripting` to run
+one self-contained function in the top frame. The function sets the visible
+password field(s) of the first login form, and the username field before it,
+dispatching `input` and `change` events. It returns only which fields it
+filled. The page (and any script on it) can read filled values, exactly as if
+the user had typed them, so fill only on sites you trust. Matching uses the
+generated-password site or the saved URL's host: a login for `example.com`
+matches `example.com` and its subdomains, and the other way round. Plain
+`http:` pages are flagged as not secure.
+
+## Two-factor codes
+
+Logins may have an `otp` object `{ secret, digits, period, algorithm }`:
+an RFC 4648 base32 secret of 16–256 characters, 6–8 digits, a 10–300 second
+period, and `SHA1`, `SHA256`, or `SHA512`. Codes follow RFC 6238 (TOTP) and are
+tested against its published vectors. Secrets come from a pasted setup key, an
+`otpauth://totp/` link, or a QR image decoded locally with the browser's
+`BarcodeDetector`; HOTP is rejected. The secret is encrypted with the rest of
+the vault. Storing it beside the password means anyone with the master
+passphrase and the vault, or a backup, has both factors. Vaults and backups
+that contain `otp` cannot be opened by EasyPwd versions before 0.3.0.

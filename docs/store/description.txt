@@ -2,12 +2,13 @@ Remember one passphrase. Get the same strong password for every site, on any dev
 
 EasyPwd calculates a unique password for each website from your email, your master passphrase, and the site's name. There is nothing to sync: install EasyPwd on another computer, enter the same email and passphrase, and you get the same passwords. Passwords you can't change are kept in a local encrypted vault.
 
-No account. No server. No cloud sync. No analytics. No access to the websites you visit.
+No account. No server. No cloud sync. No analytics. No background access to the websites you visit.
 
 HOW IT WORKS
 1. Enter your email (or any name) and a master passphrase.
 2. Type a website, such as github.com, and press Enter.
 3. Copy your password. It is calculated, not stored, and it will be the same tomorrow and on every other device.
+4. On a login page, click the EasyPwd icon (or press Ctrl/⌘+Shift+L) and click Fill.
 
 FEATURES
 • Generated passwords: strong, unique, and the same on every device.
@@ -15,6 +16,8 @@ FEATURES
 • Per-site rules: set the length (8–64) and character types for sites with limits.
 • Key fingerprint: four words confirm you typed the same email and passphrase on every device. Different words mean a typo.
 • Saved logins: store existing passwords, PINs, and Wi-Fi keys in an AES-256-GCM encrypted vault.
+• One-click fill: the toolbar popup finds logins for the current site and fills the form.
+• Two-factor codes (TOTP): paste a setup key or QR screenshot to see and fill 6-digit 2FA codes.
 • Usernames, websites, and notes for every login, with one-click copy.
 • Random password generator with a strength estimate.
 • Auto-lock after 1, 5, 15, or 30 minutes of inactivity.
@@ -23,7 +26,7 @@ FEATURES
 
 PRIVACY AND SECURITY
 • Everything runs inside the extension. It makes no network requests.
-• Only two permissions: "storage" for the encrypted vault and "clipboardWrite" to copy a password when you click copy.
+• No install warnings. "storage" holds the encrypted vault, "clipboardWrite" copies when you click copy, and "activeTab" + "scripting" fill the current page only when you open the popup and click Fill.
 • Built on the browser's native Web Crypto: PBKDF2-SHA-256 (600,000 iterations), HKDF, HMAC-SHA-256, and AES-256-GCM.
 • The password algorithm is published with test vectors, so anyone can verify or reimplement it.
 

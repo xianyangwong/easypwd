@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="light dark">
+  <title>EasyPwd</title>
+  <link rel="stylesheet" href="popup.css">
+  <script type="module" src="popup.js"></script>
+</head>
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" hidden>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3L20 3M16 7l3 3M13.5 9.5l2 2"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3l10 18H2L12 3z"/><path d="M12 10v4M12 17.5v.01"/></symbol>
+  </svg>
+
+  <header class="top">
+    <img src="icons/32.png" alt="" width="20" height="20">
+    <strong>EasyPwd</strong>
+    <button id="open-vault" type="button" class="btn ghost">Open vault</button>
+  </header>
+
+  <p id="site" class="site" hidden><span id="site-host"></span><span id="site-insecure" class="warn" hidden><svg class="icon icon-sm"><use href="#i-warn"/></svg> Not secure (http)</span></p>
+
+  <section id="no-site" class="panel center" hidden>
+    <p id="no-site-text">Open a website to fill or copy its login.</p>
+  </section>
+
+  <section id="setup" class="panel center" hidden>
+    <p>Create your vault to get started.</p>
+    <button id="setup-open" type="button" class="btn primary">Set up EasyPwd</button>
+  </section>
+
+  <form id="unlock" class="panel" hidden novalidate>
+    <label for="unlock-pass">Master passphrase</label>
+    <p id="unlock-identity" class="muted small"></p>
+    <input id="unlock-pass" type="password" autocomplete="off" spellcheck="false" required>
+    <p id="unlock-error" class="error" role="alert"></p>
+    <button id="unlock-submit" type="submit" class="btn primary block">Unlock</button>
+    <p class="muted small">Unlocks for this popup only. Keep the vault tab unlocked to skip this.</p>
+  </form>
+
+  <section id="results" hidden>
+    <ul id="matches" class="matches"></ul>
+    <section id="suggest" class="panel" hidden>
+      <h2 id="suggest-title">No saved login for this site</h2>
+      <label for="suggest-site">Generate for</label>
+      <input id="suggest-site" maxlength="1024" autocomplete="off" spellcheck="false">
+      <div class="pw">
+        <output id="suggest-password" class="mono"></output>
+        <button id="suggest-reveal" type="button" class="icon-btn" aria-label="Show password" aria-pressed="false" title="Show"><svg class="icon"><use href="#i-eye"/></svg></button>
+      </div>
+      <div class="row">
+        <button id="suggest-fill" type="button" class="btn primary">Fill</button>
+        <button id="suggest-copy" type="button" class="btn">Copy</button>
+        <button id="suggest-save" type="button" class="btn ghost">Save to vault</button>
+      </div>
+      <p class="muted small">The same site always gives the same password. Save it to keep the username with it.</p>
+    </section>
+    <button id="add-login" type="button" class="link" hidden>Add another login for this site</button>
+  </section>
+
+  <p id="status" class="status" role="status"></p>
+</body>
+</html>

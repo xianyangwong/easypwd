@@ -1,15 +1,25 @@
 {
   "manifest_version": 3,
   "name": "EasyPwd",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Remember one passphrase. Get the same strong password for every site, on any device. Offline, no account, no sync.",
   "homepage_url": "https://github.com/xianyangwong/easypwd",
   "minimum_chrome_version": "120",
-  "permissions": ["storage", "clipboardWrite"],
+  "permissions": ["storage", "clipboardWrite", "activeTab", "scripting"],
   "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
   "action": {
-    "default_title": "Open EasyPwd",
+    "default_title": "EasyPwd",
+    "default_popup": "popup.html",
     "default_icon": { "16": "icons/16.png", "32": "icons/32.png" }
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+L",
+        "mac": "Command+Shift+L"
+      },
+      "description": "Open EasyPwd for this page"
+    }
   },
   "background": {
     "service_worker": "background.js",

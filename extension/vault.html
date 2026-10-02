@@ -119,6 +119,11 @@
               <dd id="dv-prev" class="mono"></dd>
               <div class="field-actions"><button type="button" class="icon-btn" data-copy="previous" aria-label="Copy previous password" title="Copy"><svg class="icon"><use href="#i-copy"/></svg></button></div>
             </div>
+            <div id="dv-otp-row" class="field">
+              <dt>2FA code</dt>
+              <dd class="otp"><span id="dv-otp" class="mono"></span><span id="dv-otp-timer" class="otp-timer" aria-hidden="true"></span></dd>
+              <div class="field-actions"><button type="button" class="icon-btn" data-copy="otp" aria-label="Copy 2FA code" title="Copy"><svg class="icon"><use href="#i-copy"/></svg></button></div>
+            </div>
             <div id="dv-url-row" class="field">
               <dt>Website</dt>
               <dd><a id="dv-url" target="_blank" rel="noopener noreferrer"></a></dd>
@@ -186,6 +191,18 @@
               </div>
               <label for="entry-url">Website</label>
               <input id="entry-url" maxlength="1024" autocomplete="off" spellcheck="false" placeholder="example.com">
+            </div>
+            <label for="entry-otp">2FA</label>
+            <div>
+              <div class="input-row">
+                <div class="input-group">
+                  <input id="entry-otp" type="password" maxlength="2048" autocomplete="off" spellcheck="false" class="mono" placeholder="Setup key or otpauth:// link">
+                  <button id="toggle-entry-otp" type="button" class="icon-btn" aria-label="Show setup key" aria-pressed="false"><svg class="icon"><use href="#i-eye"/></svg></button>
+                </div>
+                <button id="entry-otp-scan" type="button" class="btn" hidden>Scan QR</button>
+                <input id="entry-otp-file" type="file" accept="image/*" hidden>
+              </div>
+              <p id="entry-otp-hint" class="muted small field-hint">Optional. On the website’s two-factor setup page, choose “can’t scan?” and paste the key. Or paste a QR screenshot.</p>
             </div>
             <label for="entry-notes">Notes</label>
             <textarea id="entry-notes" maxlength="4000" rows="4"></textarea>

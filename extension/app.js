@@ -1,9 +1,10 @@
 import {
   DEFAULT_RULES, GROUP_ORDER, MAX_BACKUP_BYTES, MAX_ENTRIES, derivePassword, encryptVault, estimateBits,
-  generatePassword, normalizeIdentity, normalizeSite, parseBackup, sealVault, unlockVault, validRules,
+  generatePassword, normalizeIdentity, normalizeSite, parseBackup, parseOtp, sealVault, totp, unlockVault, validRules,
   validateEnvelope, validateNewMasterPassword,
 } from './crypto.js';
 import { entriesFromChromeCsv } from './csv.js';
+import { lookup } from './lookup.js';
 import { STORAGE_KEY, VaultStorage, sameVault } from './storage.js';
 
 const $ = (id) => document.getElementById(id);
@@ -200,7 +201,9 @@ function lock(notice = '') {
     if (field.id !== 'gen-value') field.value = '';
   }
   $('entries').replaceChildren();
-  for (const id of ['dv-password', 'dv-prev', 'entry-preview', 'set-fingerprint', 'fp-words']) $(id).textContent = '';
+  for (const id of ['dv-password', 'dv-prev', 'dv-otp', 'entry-preview', 'set-fingerprint', 'fp-words']) $(id).textContent = '';
+  stopOtpTimer();
+  editorOtp = null;
   $('gen-value').value = '';
   $('app').hidden = true;
   $('lock-screen').hidden = false;
@@ -224,6 +227,7 @@ function openSession(opened) {
   setView('items');
   regenerate();
   $('search').focus();
+  openFromHash();
 }
 
 // ---------- Lock screen ----------
@@ -399,7 +403,10 @@ function renderDetail() {
   $('detail-view').hidden = editing || !entry;
   $('detail-empty').hidden = editing || !!entry;
   $('view-items').classList.toggle('showing-detail', editing || !!entry);
-  if (editing || !entry) return;
+  if (editing || !entry) {
+    stopOtpTimer();
+    return;
+  }
 
   $('dv-avatar').replaceWith(Object.assign(avatar(entry.name, true), { id: 'dv-avatar' }));
   $('dv-name').textContent = entry.name;
@@ -425,6 +432,9 @@ function renderDetail() {
       $('dv-prev').textContent = previous;
     }, () => {});
   }
+  $('dv-otp-row').hidden = !entry.otp;
+  if (entry.otp) startOtpTimer(entry);
+  else stopOtpTimer();
   $('dv-url-row').hidden = !entry.url;
   $('dv-url').href = entry.url || '#';
   $('dv-url').textContent = entry.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
@@ -439,6 +449,38 @@ function renderDetail() {
     if (entry.password.length < 12) warnings.push('This password is short. Consider switching this login to a generated password.');
   }
   $('dv-warnings').replaceChildren(...warnings.map((text) => el('li', {}, [warnIcon(), text])));
+}
+
+// ---------- Two-factor codes ----------
+
+let otpTimer = null;
+let otpEntry = null;
+
+const formatCode = (code) => (code.length === 6 ? `${code.slice(0, 3)} ${code.slice(3)}` : code);
+
+function stopOtpTimer() {
+  clearInterval(otpTimer);
+  otpTimer = null;
+  otpEntry = null;
+}
+
+function startOtpTimer(entry) {
+  if (otpEntry === entry && otpTimer) return;
+  stopOtpTimer();
+  otpEntry = entry;
+  const token = epoch;
+  const tick = async () => {
+    if (token !== epoch || current() !== entry || editingId !== undefined) return stopOtpTimer();
+    const { code, remaining, period } = await totp(entry.otp);
+    if (token !== epoch || current() !== entry) return;
+    $('dv-otp').textContent = formatCode(code);
+    $('dv-otp-timer').style.setProperty('--p', String(remaining / period));
+    $('dv-otp-timer').classList.toggle('low', remaining <= 5);
+    $('dv-otp-timer').title = `${remaining}s left`;
+  };
+  $('dv-otp').textContent = '';
+  tick().catch(() => {});
+  otpTimer = setInterval(() => { tick().catch(() => {}); }, 1000);
 }
 
 function warnIcon() {
@@ -470,9 +512,10 @@ for (const button of document.querySelectorAll('[data-copy]')) {
     const entry = current();
     if (!entry || !isActive()) return;
     const field = button.dataset.copy;
-    const labels = { username: 'Username', password: 'Password', previous: 'Previous password', url: 'Website' };
+    const labels = { username: 'Username', password: 'Password', previous: 'Previous password', url: 'Website', otp: '2FA code' };
     try {
-      const value = field === 'password' || field === 'previous' ? await passwordFor(entry, field === 'previous') : entry[field];
+      const value = field === 'otp' ? (await totp(entry.otp)).code :
+        field === 'password' || field === 'previous' ? await passwordFor(entry, field === 'previous') : entry[field];
       await navigator.clipboard.writeText(value);
       toast(`${labels[field]} copied`);
     } catch {
@@ -520,6 +563,7 @@ $('dv-delete').addEventListener('click', async () => {
 // ---------- Editor ----------
 
 let editorOriginal = null; // Generation settings of the login being edited.
+let editorOtp = null; // Two-factor settings matching the 2FA field, so non-default digits/periods survive edits.
 let previewToken = 0;
 
 const editorMode = () => document.querySelector('input[name="entry-mode"]:checked').value;
@@ -590,8 +634,11 @@ function openEditor(id, site = '') {
   $('entry-password').value = entry?.password ?? '';
   $('entry-url').value = entry?.url ?? '';
   $('entry-notes').value = entry?.notes ?? '';
+  editorOtp = entry?.otp ?? null;
+  $('entry-otp').value = editorOtp?.secret ?? '';
   $('form-error').textContent = '';
   resetReveal($('toggle-entry-password'), $('entry-password'), 'password');
+  resetReveal($('toggle-entry-otp'), $('entry-otp'), 'setup key');
   setMode(entry && !entry.derive ? 'saved' : 'generated');
   renderDetail();
   $(entry || site ? 'entry-name' : 'entry-site').focus();
@@ -600,8 +647,9 @@ function openEditor(id, site = '') {
 function closeEditor() {
   editingId = undefined;
   editorOriginal = null;
+  editorOtp = null;
   previewToken += 1;
-  for (const id of ['entry-site', 'entry-name', 'entry-username', 'entry-password', 'entry-url', 'entry-notes']) $(id).value = '';
+  for (const id of ['entry-site', 'entry-name', 'entry-username', 'entry-password', 'entry-url', 'entry-notes', 'entry-otp']) $(id).value = '';
   $('entry-preview').textContent = '';
   renderDetail();
 }
@@ -657,12 +705,71 @@ $('preview-copy').addEventListener('click', async () => {
   }
 });
 
+// Turns an otpauth:// link into its setup key, and fills in the name and username from it.
+function applyOtpInput(text) {
+  const { otp, issuer, account } = parseOtp(text);
+  editorOtp = otp;
+  $('entry-otp').value = otp.secret;
+  if (issuer && !$('entry-name').value.trim()) $('entry-name').value = issuer;
+  if (account && !$('entry-username').value.trim()) $('entry-username').value = account;
+  $('form-error').textContent = '';
+}
+
+function editorOtpValue() {
+  const value = $('entry-otp').value.trim();
+  if (!value) return null;
+  if (editorOtp && value === editorOtp.secret) return editorOtp;
+  return parseOtp(value).otp;
+}
+
+bindReveal($('toggle-entry-otp'), $('entry-otp'), 'setup key');
+$('entry-otp').addEventListener('change', () => {
+  if (!/^otpauth:/i.test($('entry-otp').value.trim())) return;
+  try { applyOtpInput($('entry-otp').value); } catch (error) { $('form-error').textContent = error.message; }
+});
+
+async function scanQr(blob) {
+  if (!isActive()) return;
+  try {
+    const detector = new BarcodeDetector({ formats: ['qr_code'] });
+    const image = await createImageBitmap(blob);
+    const codes = await detector.detect(image);
+    image.close();
+    const link = codes.map((code) => code.rawValue).find((value) => /^otpauth:/i.test(value));
+    if (!link) throw new Error('No two-factor QR code found in that image.');
+    if (editingId === undefined) return;
+    applyOtpInput(link);
+    toast('2FA added from QR code');
+  } catch (error) {
+    $('form-error').textContent = error.message || 'Couldn’t read that image.';
+  }
+}
+
+if ('BarcodeDetector' in globalThis) {
+  $('entry-otp-scan').hidden = false;
+  $('entry-otp-scan').addEventListener('click', () => $('entry-otp-file').click());
+  $('entry-otp-file').addEventListener('change', () => {
+    const [file] = $('entry-otp-file').files;
+    $('entry-otp-file').value = '';
+    if (file) scanQr(file);
+  });
+  $('entry-form').addEventListener('paste', (event) => {
+    const file = [...event.clipboardData.files].find((item) => item.type.startsWith('image/'));
+    if (!file) return;
+    event.preventDefault();
+    scanQr(file);
+  });
+} else {
+  $('entry-otp-hint').textContent = 'Optional. On the website’s two-factor setup page, choose “can’t scan?” and paste the key here.';
+}
+
 $('entry-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   const id = editingId;
   await run(async (assertActive, canWrite) => {
     const generated = editorMode() === 'generated';
     const spec = editorSpec();
+    const otp = editorOtpValue();
     let entry;
     if (generated) {
       const error = specError(spec);
@@ -693,6 +800,7 @@ $('entry-form').addEventListener('submit', async (event) => {
         updatedAt: Date.now(),
       };
     }
+    if (otp) entry.otp = otp;
     if (id === null && session.entries.length >= MAX_ENTRIES) throw new Error(`A vault can hold up to ${MAX_ENTRIES} logins.`);
     const entries = id === null ? [...session.entries, entry] : session.entries.map((item) => (item.id === id ? entry : item));
     await commit(entries, assertActive, canWrite);
@@ -986,6 +1094,40 @@ if (storage) {
     try { if (next) validateEnvelope(next); } catch { damaged = true; }
     if (session) lock('The vault was changed in another tab. Unlock to continue.');
     else if (!busy) renderLock();
+  });
+}
+
+// ---------- Toolbar popup ----------
+
+// The popup opens vault.html#new=<site> to save a login for the page the user is on.
+function openFromHash() {
+  const match = /^#new=(.*)$/.exec(location.hash);
+  if (!match || !isActive()) return;
+  history.replaceState(null, '', location.pathname);
+  let site = '';
+  try { site = normalizeSite(decodeURIComponent(match[1])).slice(0, 1_024); } catch { /* ignore */ }
+  setView('items');
+  selectedId = null;
+  $('search').value = '';
+  renderItems();
+  openEditor(null, site);
+}
+window.addEventListener('hashchange', openFromHash);
+
+// Answers the popup with matching logins while this tab is unlocked.
+// A locked tab stays silent, so the popup asks for the passphrase itself.
+if (globalThis.chrome?.runtime?.onMessage) {
+  chrome.runtime.onMessage.addListener((message, sender, reply) => {
+    if (message?.type !== 'easypwd:lookup' || sender.id !== chrome.runtime.id || sender.tab ||
+        !sender.url?.startsWith(chrome.runtime.getURL('popup.html')) ||
+        typeof message.host !== 'string' || typeof message.site !== 'string' || !session || !isActive()) return undefined;
+    lastActivity = Date.now();
+    const token = epoch;
+    lookup(session, message).then(
+      (result) => reply(token === epoch && session ? result : null),
+      () => reply(null),
+    );
+    return true;
   });
 }
 

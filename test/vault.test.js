@@ -4,8 +4,9 @@ import {
   createVault, unlockVault, encryptVault, parseBackup, validateEnvelope,
   validateEntries, generatePassword, ITERATIONS, MAX_BACKUP_BYTES,
   sealVault, estimateBits, deriveKey, deriveKeys, derivePassword, normalizeSite, normalizeIdentity,
-  FINGERPRINT_WORDS, GROUPS,
+  FINGERPRINT_WORDS, GROUPS, parseOtp, totp, DEFAULT_RULES,
 } from '../extension/crypto.js';
+import { guessSite, lookup, siteMatches } from '../extension/lookup.js';
 import { createHmac, hkdfSync, pbkdf2Sync } from 'node:crypto';
 import { parseCsv, entriesFromChromeCsv } from '../extension/csv.js';
 import { VaultStorage, STORAGE_KEY, sameVault } from '../extension/storage.js';
@@ -324,4 +325,84 @@ test('format 1 vaults still unlock and can be upgraded with an identity', async 
   const keys = await deriveKeys(master, identity, salt);
   assert.equal(keys.key.extractable, false);
   assert.equal(keys.siteKey.extractable, false);
+});
+
+const base32 = (text) => {
+  const bits = [...Buffer.from(text)].map((byte) => byte.toString(2).padStart(8, '0')).join('');
+  return bits.match(/.{1,5}/g).map((chunk) => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'[parseInt(chunk.padEnd(5, '0'), 2)]).join('');
+};
+
+test('two-factor codes match the RFC 6238 test vectors', async () => {
+  const secrets = {
+    SHA1: base32('12345678901234567890'),
+    SHA256: base32('12345678901234567890123456789012'),
+    SHA512: base32('1234567890'.repeat(6) + '1234'),
+  };
+  const vectors = [
+    [59, '94287082', '46119246', '90693936'],
+    [1111111109, '07081804', '68084774', '25091201'],
+    [1111111111, '14050471', '67062674', '99943326'],
+    [1234567890, '89005924', '91819424', '93441116'],
+    [2000000000, '69279037', '90698825', '38618901'],
+    [20000000000, '65353130', '77737706', '47863826'],
+  ];
+  for (const [time, ...codes] of vectors) {
+    for (const [index, algorithm] of ['SHA1', 'SHA256', 'SHA512'].entries()) {
+      const result = await totp({ secret: secrets[algorithm], digits: 8, period: 30, algorithm }, time * 1000);
+      assert.equal(result.code, codes[index], `${algorithm} at ${time}`);
+    }
+  }
+  const six = await totp({ secret: secrets.SHA1, digits: 6, period: 30, algorithm: 'SHA1' }, 59_000);
+  assert.deepEqual(six, { code: '287082', remaining: 1, period: 30 });
+});
+
+test('two-factor setup keys and otpauth links parse strictly', () => {
+  assert.deepEqual(parseOtp(' jbsw y3dp-ehpk 3pxp== ').otp, { secret: 'JBSWY3DPEHPK3PXP', digits: 6, period: 30, algorithm: 'SHA1' });
+  assert.deepEqual(
+    parseOtp('otpauth://totp/ACME%20Co:jane%40example.com?secret=JBSWY3DPEHPK3PXP&algorithm=SHA256&digits=8&period=60'),
+    { otp: { secret: 'JBSWY3DPEHPK3PXP', digits: 8, period: 60, algorithm: 'SHA256' }, issuer: 'ACME Co', account: 'jane@example.com' },
+  );
+  assert.equal(parseOtp('otpauth://totp/x?secret=JBSWY3DPEHPK3PXP&issuer=GitHub').issuer, 'GitHub');
+  assert.throws(() => parseOtp('otpauth://hotp/x?secret=JBSWY3DPEHPK3PXP&counter=1'), /HOTP/);
+  assert.throws(() => parseOtp('JBSWY3DP'), /too short/);
+  assert.throws(() => parseOtp('not a key 0189'));
+  assert.throws(() => parseOtp('otpauth://totp/x?secret=JBSWY3DPEHPK3PXP&digits=9'));
+  assert.throws(() => parseOtp(''));
+
+  const otp = { secret: 'JBSWY3DPEHPK3PXP', digits: 6, period: 30, algorithm: 'SHA1' };
+  assert.doesNotThrow(() => validateEntries([{ ...entry, otp }]));
+  assert.throws(() => validateEntries([{ ...entry, otp: { ...otp, extra: 1 } }]));
+  assert.throws(() => validateEntries([{ ...entry, otp: { ...otp, secret: 'jbswy3dpehpk3pxp' } }]));
+  assert.throws(() => validateEntries([{ ...entry, otp: { ...otp, period: 5 } }]));
+  assert.throws(() => validateEntries([{ ...entry, otp: { ...otp, algorithm: 'MD5' } }]));
+});
+
+test('the popup finds logins for the current site and suggests one otherwise', async () => {
+  assert.ok(siteMatches('google.com', 'accounts.google.com'));
+  assert.ok(siteMatches('accounts.google.com', 'google.com'));
+  assert.ok(!siteMatches('google.com', 'notgoogle.com'));
+  assert.ok(!siteMatches('com', 'example.com'));
+  assert.equal(guessSite('accounts.google.com'), 'google.com');
+  assert.equal(guessSite('www.bbc.co.uk'), 'bbc.co.uk');
+  assert.equal(guessSite('localhost'), 'localhost');
+  assert.equal(guessSite('192.168.1.10'), '192.168.1.10');
+
+  const { siteKey, entries } = await sealVault([], master, identity);
+  const otp = { secret: 'JBSWY3DPEHPK3PXP', digits: 6, period: 30, algorithm: 'SHA1' };
+  const generated = { ...entry, id: 'b', name: 'GitHub', url: 'https://github.com', password: '', derive: { site: 'github.com', counter: 2, ...DEFAULT_RULES }, otp };
+  const saved = { ...entry, id: 'a', url: 'https://mail.example.com/login' };
+  const vault = { siteKey, entries: [...entries, generated, saved] };
+
+  const github = await lookup(vault, { host: 'github.com', site: 'github.com' });
+  assert.equal(github.matches.length, 1);
+  assert.equal(github.matches[0].password, await derivePassword(siteKey, generated.derive));
+  assert.match(github.matches[0].otp.code, /^\d{6}$/);
+
+  const mail = await lookup(vault, { host: 'example.com', site: 'example.com' });
+  assert.deepEqual(mail.matches.map((match) => match.password), [entry.password]);
+
+  const none = await lookup(vault, { host: 'news.ycombinator.com', site: 'ycombinator.com' });
+  assert.equal(none.matches.length, 0);
+  assert.equal(none.suggestion.site, 'ycombinator.com');
+  assert.equal(none.suggestion.password, await derivePassword(siteKey, { site: 'ycombinator.com', counter: 1, ...DEFAULT_RULES }));
 });

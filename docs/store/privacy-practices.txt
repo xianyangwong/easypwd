@@ -7,4 +7,10 @@ Used to save the user's encrypted password vault and the auto-lock setting in ch
 clipboardWrite justification:
 Used only when the user clicks a Copy button, to copy a username, password, or website to the clipboard so they can paste it into a login form. The extension never copies anything automatically and never reads the clipboard.
 
+activeTab justification:
+Used only after the user clicks the EasyPwd toolbar icon or presses its keyboard shortcut. The popup reads the current tab's address to show the saved logins for that website. It grants no access to other tabs or to sites where the user hasn't opened the popup.
+
+scripting justification:
+Used only when the user clicks Fill in the popup, to enter the chosen username and password (or two-factor code) into the login form on the current tab, using the temporary access granted by activeTab. The injected function is bundled with the extension, reads no page content, and sends nothing anywhere.
+
 Remote code: No, I am not using remote code.

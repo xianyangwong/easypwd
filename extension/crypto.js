@@ -104,7 +104,7 @@ export function validateEnvelope(value) {
 }
 
 const ENTRY_KEYS = ['id', 'name', 'url', 'username', 'password', 'notes'];
-const OPTIONAL_KEYS = ['updatedAt', 'derive'];
+const OPTIONAL_KEYS = ['updatedAt', 'derive', 'otp'];
 
 export function validateEntries(entries) {
   if (!Array.isArray(entries) || entries.length > MAX_ENTRIES) {
@@ -140,6 +140,7 @@ export function validateEntries(entries) {
     } else if (!entry.name.trim() || !entry.password) {
       throw new Error('Every entry needs a name and a password.');
     }
+    if (Object.hasOwn(entry, 'otp')) validateOtp(entry.otp);
     if (entry.url) {
       let url;
       try {
@@ -367,5 +368,93 @@ export function generatePassword(length = 20, groups = GROUP_ORDER) {
   for (;;) {
     const password = Array.from({ length }, () => alphabet[randomIndex(alphabet.length)]).join('');
     if (coversGroups(password, groups)) return password;
+  }
+}
+
+// ---------- Two-factor codes (TOTP, RFC 6238) ----------
+
+const BASE32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+const OTP_ALGORITHMS = { SHA1: 'SHA-1', SHA256: 'SHA-256', SHA512: 'SHA-512' };
+
+export function validateOtp(otp) {
+  if (!exactKeys(otp, ['secret', 'digits', 'period', 'algorithm']) ||
+      typeof otp.secret !== 'string' || !/^[A-Z2-7]{16,256}$/.test(otp.secret) ||
+      ![6, 7, 8].includes(otp.digits) ||
+      !Number.isInteger(otp.period) || otp.period < 10 || otp.period > 300 ||
+      !Object.hasOwn(OTP_ALGORITHMS, otp.algorithm)) {
+    throw new Error('Invalid two-factor settings.');
+  }
+  return otp;
+}
+
+function base32Decode(secret) {
+  const bytes = [];
+  let buffer = 0;
+  let bits = 0;
+  for (const character of secret) {
+    buffer = (buffer << 5) | BASE32.indexOf(character);
+    bits += 5;
+    if (bits >= 8) {
+      bits -= 8;
+      bytes.push((buffer >> bits) & 255);
+    }
+  }
+  return new Uint8Array(bytes);
+}
+
+// Accepts a setup key ("JBSW Y3DP EHPK 3PXP") or an otpauth://totp/... link.
+// Returns the settings plus the issuer and account name when the link has them.
+export function parseOtp(input) {
+  const text = typeof input === 'string' ? input.trim() : '';
+  const invalid = 'Paste the setup key or otpauth:// link from the website’s two-factor setup.';
+  const otp = { secret: '', digits: 6, period: 30, algorithm: 'SHA1' };
+  let issuer = '';
+  let account = '';
+  if (/^otpauth:/i.test(text)) {
+    let url;
+    try { url = new URL(text); } catch { throw new Error(invalid); }
+    if (url.hostname.toLowerCase() !== 'totp') {
+      throw new Error('Only time-based codes (TOTP) are supported, not counter-based ones (HOTP).');
+    }
+    const params = url.searchParams;
+    otp.secret = params.get('secret') ?? '';
+    if (params.has('digits')) otp.digits = Number(params.get('digits'));
+    if (params.has('period')) otp.period = Number(params.get('period'));
+    if (params.has('algorithm')) otp.algorithm = params.get('algorithm').toUpperCase().replace('-', '');
+    let label = '';
+    try { label = decodeURIComponent(url.pathname.replace(/^\/+/, '')); } catch { /* keep empty */ }
+    const colon = label.indexOf(':');
+    account = (colon >= 0 ? label.slice(colon + 1) : label).trim();
+    issuer = (params.get('issuer') ?? (colon >= 0 ? label.slice(0, colon) : '')).trim();
+  } else {
+    otp.secret = text;
+  }
+  otp.secret = otp.secret.toUpperCase().replace(/[\s-]/g, '').replace(/=+$/, '');
+  try {
+    validateOtp(otp);
+  } catch {
+    throw new Error(/^[A-Z2-7]*$/.test(otp.secret) && otp.secret.length < 16 ?
+      'That setup key is too short. Check that you copied all of it.' : invalid);
+  }
+  return { otp, issuer: issuer.slice(0, 1_024), account: account.slice(0, 1_024) };
+}
+
+// Returns the current code and how many seconds it stays valid.
+export async function totp(otp, now = Date.now()) {
+  validateOtp(otp);
+  const step = Math.floor(now / 1000 / otp.period);
+  const message = new DataView(new ArrayBuffer(8));
+  message.setUint32(0, Math.floor(step / 2 ** 32));
+  message.setUint32(4, step >>> 0);
+  const secret = base32Decode(otp.secret);
+  try {
+    const key = await crypto.subtle.importKey('raw', secret, { name: 'HMAC', hash: OTP_ALGORITHMS[otp.algorithm] }, false, ['sign']);
+    const hash = new Uint8Array(await crypto.subtle.sign('HMAC', key, message));
+    const offset = hash[hash.length - 1] & 15;
+    const value = ((hash[offset] & 127) << 24) | (hash[offset + 1] << 16) | (hash[offset + 2] << 8) | hash[offset + 3];
+    const code = String(value % 10 ** otp.digits).padStart(otp.digits, '0');
+    return { code, remaining: otp.period - (Math.floor(now / 1000) % otp.period), period: otp.period };
+  } finally {
+    secret.fill(0);
   }
 }
