@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createVault, unlockVault, encryptVault, parseBackup, validateEnvelope,
-  validateEntries, generatePassword, ITERATIONS, MAX_BACKUP_BYTES,
+  validateEntries, generatePassword, ITERATIONS, MAX_BACKUP_BYTES, MAX_ENTRIES,
   sealVault, estimateBits, deriveKey, deriveKeys, derivePassword, normalizeSite, normalizeIdentity,
   FINGERPRINT_WORDS, GROUPS, parseOtp, totp, DEFAULT_RULES,
 } from '../extension/crypto.js';
@@ -405,4 +405,19 @@ test('the popup finds logins for the current site and suggests one otherwise', a
   assert.equal(none.matches.length, 0);
   assert.equal(none.suggestion.site, 'ycombinator.com');
   assert.equal(none.suggestion.password, await derivePassword(siteKey, { site: 'ycombinator.com', counter: 1, ...DEFAULT_RULES }));
+});
+
+test('a full vault of realistic logins fits the backup limit', async () => {
+  const created = await createVault(master, identity);
+  const entries = Array.from({ length: MAX_ENTRIES }, (_, i) => ({
+    ...entry,
+    id: `12345678-1234-4123-8123-${i.toString(16).padStart(12, '0')}`,
+    name: `Example site number ${i}`, url: `https://login.example-${i}.com/account/signin`,
+    username: `someone.longer.name+${i}@example.com`, notes: 'Recovery codes stored offline.',
+    updatedAt: Date.now(),
+  }));
+  const saved = JSON.stringify(await encryptVault(entries, created.key, created.envelope.salt, identity));
+  assert.ok(saved.length < MAX_BACKUP_BYTES / 2, `${saved.length} bytes`);
+  assert.equal((await unlockVault(parseBackup(saved), master)).entries.length, MAX_ENTRIES);
+  assert.throws(() => validateEntries([...entries, { ...entry, id: crypto.randomUUID() }]), /no more than/);
 });

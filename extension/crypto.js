@@ -1,6 +1,6 @@
 export const ITERATIONS = 600_000;
-export const MAX_BACKUP_BYTES = 2_000_000;
-export const MAX_ENTRIES = 1_000;
+export const MAX_BACKUP_BYTES = 8_000_000;
+export const MAX_ENTRIES = 5_000;
 const encoder = new TextEncoder();
 const decoder = new TextDecoder('utf-8', { fatal: true });
 const AAD = { 1: encoder.encode('EasyPwd vault format 1'), 2: encoder.encode('EasyPwd vault format 2') };
@@ -227,7 +227,7 @@ export async function encryptVault(entries, key, salt, identity) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const plaintext = encoder.encode(JSON.stringify({ entries }));
   try {
-    if (plaintext.length > 1_400_000) throw new Error('The vault is too large. No changes were saved.');
+    if (plaintext.length > MAX_BACKUP_BYTES * 0.7) throw new Error('The vault is too large. No changes were saved.');
     const ciphertext = await crypto.subtle.encrypt(
       { name: 'AES-GCM', iv, additionalData: AAD[version], tagLength: 128 }, key, plaintext,
     );
@@ -298,7 +298,7 @@ export async function unlockVault(envelope, password) {
 
 export function parseBackup(text) {
   if (typeof text !== 'string' || encoder.encode(text).length > MAX_BACKUP_BYTES) {
-    throw new Error('Backup exceeds the 2 MB size limit.');
+    throw new Error(`Backup exceeds the ${MAX_BACKUP_BYTES / 1e6} MB size limit.`);
   }
   let value;
   try {
