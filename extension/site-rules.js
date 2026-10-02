@@ -65,6 +65,7 @@ export function parseRules(text) {
     any = true;
   }
   if (/\b(?:no|not|cannot|can't|can ?not|don't|do not|must not|without|isn't|aren't)\b[^.\n]{0,40}\b(?:special characters?|symbols?|punctuation)/i.test(text) ||
+      /\b(?:special characters?|symbols?|punctuation)\b[^.\n]{0,20}\b(?:(?:are|is) not|aren't|isn't|not)\s+(?:allowed|permitted|accepted|supported)/i.test(text) ||
       /\b(?:letters and (?:numbers|digits) only|only (?:contain )?letters and (?:numbers|digits)|alphanumeric(?: characters)? only|only alphanumeric|must be alphanumeric)/i.test(text) ||
       /(?:only|following|allowed|permitted|valid|accepted)[^.\n]{0,40}(?:special characters?|symbols?)[^.\n]{0,20}?[:(]\s*[^\w\s]{1,}/i.test(text)) {
     found.symbols = false;

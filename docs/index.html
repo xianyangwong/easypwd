@@ -152,11 +152,23 @@
       <p class="muted reveal" data-i18n="probP">Calculated passwords are an old idea. Here is what usually goes wrong, and the fix.</p>
       <div class="grid" data-stagger>
         <article class="reveal spin"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></svg></span><h3 data-i18n="c1t">A site gets breached</h3><p data-i18n="c1d">Bump its version for a fresh password.</p></article>
-        <article class="reveal slide"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></span><h3 data-i18n="c2t">Picky password rules</h3><p data-i18n="c2d">Set length and symbols per site.</p></article>
+        <article class="reveal slide"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></span><h3 data-i18n="c2t">Picky password rules</h3><p data-i18n="c2d">On-device AI reads them for you.</p></article>
         <article class="reveal shake"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><h3 data-i18n="c3t">Passwords you can't change</h3><p data-i18n="c3d">Keep them in an encrypted local vault.</p></article>
         <article class="reveal pop"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="m9 12 2 2 4-4"/></svg></span><h3 data-i18n="c4t">A typo in your passphrase</h3><p data-i18n="c4d">Four words flag it instantly.</p></article>
       </div>
     </section>
+
+    <section class="wrap" id="new">
+      <h2 class="reveal" data-i18n="newH">New in 1.0: on-device AI, right in the toolbar</h2>
+      <p class="muted reveal" data-i18n="newP">Uses Chrome’s built-in Gemini Nano when your device supports it, with a built-in fallback everywhere else. Nothing leaves your device.</p>
+      <div class="grid" data-stagger>
+        <article class="reveal slide"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></span><h3 data-i18n="n1t">Match site rules</h3><p data-i18n="n1d">Reads “8–16 characters, no symbols” and generates a password that fits.</p></article>
+        <article class="reveal shake"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 18H2L12 3z"/><path d="M12 10v4M12 17.5v.01"/></svg></span><h3 data-i18n="n2t">Fake-site warning</h3><p data-i18n="n2d">Spots paypa1.com and paypal-login.com before you type.</p></article>
+        <article class="reveal pop"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span><h3 data-i18n="n3t">Search in plain words</h3><p data-i18n="n3d">Try “weak passwords” or “gmail with 2FA”.</p></article>
+        <article class="reveal spin"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><path d="M12 15v2"/></svg></span><h3 data-i18n="n4t">Fill and 2FA codes</h3><p data-i18n="n4d">Fill logins and 6-digit codes from the toolbar. Press ⌘/Ctrl+Shift+L.</p></article>
+      </div>
+    </section>
+
 
     <section id="try" class="wrap">
       <h2 class="reveal" data-i18n="tryH">Try it</h2>
@@ -217,7 +229,7 @@
       <div class="cols">
         <ul class="checks" data-stagger>
           <li class="reveal" data-i18n="s1">No network access. The extension's security policy blocks all connections.</li>
-          <li class="reveal" data-i18n="s2">No install warnings. Page access only when you click Fill.</li>
+          <li class="reveal" data-i18n="s2">No install warnings. Page access only when you click Fill or Match site rules.</li>
           <li class="reveal" data-i18n="s3">Zero dependencies. Only the browser's built-in Web Crypto.</li>
           <li class="reveal" data-i18n="s4">The algorithm is <a href="https://github.com/xianyangwong/easypwd/blob/master/SECURITY.md#generated-passwords">published as a spec</a> with test vectors, and tested against an independent implementation.</li>
         </ul>

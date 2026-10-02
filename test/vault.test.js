@@ -460,6 +460,9 @@ test('site rules: rule-based parser reads common phrasings', async () => {
   assert.deepEqual(pick(parseRules('Use at least 12 characters')), { minLength: 12, maxLength: null, symbols: true });
   assert.deepEqual(pick(parseRules('Maximum of 20 characters. Letters and numbers only.')), { minLength: null, maxLength: 20, symbols: false });
   assert.equal(parseRules('Only these special characters are allowed: ! @ #').symbols, false);
+  assert.equal(parseRules('Password must be 8-16 characters. Special characters are not allowed.').symbols, false);
+  assert.equal(parseRules('Symbols aren\'t permitted.').symbols, false);
+  assert.equal(parseRules('Special characters are allowed.'), null);
   assert.equal(parseRules('Enter your 6-digit PIN').lowercase, false);
   assert.equal(parseRules('Forgot your password? Sign in'), null);
   function pick(found) {
