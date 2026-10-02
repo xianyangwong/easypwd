@@ -9,6 +9,8 @@ email and passphrase, and you get the same passwords. Passwords you can't
 change are kept in a local encrypted vault. No account, server, cloud sync,
 analytics, or website access.
 
+**Install from the Chrome Web Store:** https://chromewebstore.google.com/detail/easypwd/dlabnhmimmbohgmbclbdagfkbibkimoa
+
 **Website and live demo:** https://easypwd.xianyangwong.com/
 
 ![EasyPwd vault with a list of logins and a selected login's details](docs/screenshot.png)
@@ -85,7 +87,11 @@ saved passwords.
 Site matching, page filling, automatic login capture, cloud sync, and recovery
 keys are **not implemented**.
 
-## Install locally
+## Install
+
+Install EasyPwd from the [Chrome Web Store](https://chromewebstore.google.com/detail/easypwd/dlabnhmimmbohgmbclbdagfkbibkimoa).
+
+### Install from source
 
 The extension runs directly from `extension/`. No dependencies or build tools
 are needed to install it.
@@ -102,8 +108,7 @@ are needed to install it.
 On another computer, repeat the steps with the same email and passphrase. If the
 fingerprint matches, generated passwords match too.
 
-This is a developer-mode preview, not a Chrome Web Store release. The extension
-uses browser-local storage, not a file shared between browser profiles. Keep the
+An unpacked extension uses browser-local storage, not a file shared between browser profiles. Keep the
 installation directory in a stable location; loading a different unpacked
 directory may create a different extension installation and separate storage.
 
