@@ -32,7 +32,10 @@ Use a disposable Chrome profile and fake credentials.
 3. Rotate a generated password; the previous version must stay visible. Edit
    its length and character groups and confirm the change warning. Add a saved
    login, edit it, search for it, and use the Generator page.
-4. Reveal/hide and copy the password. Confirm that copying is explicit.
+4. Reveal/hide and copy the password. Confirm that copying is explicit, that the
+   clipboard is empty 30 seconds later (also after copying from the popup), that
+   a copied username stays, and that **Never** in Settings keeps the password.
+   Add weak and reused saved passwords and check that **Review** lists them.
 5. Lock and check that inputs and credential names disappear. A wrong
    passphrase must fail with a clear message, keep the field selected for
    retyping, and leave the vault unchanged. Caps Lock should show a warning.

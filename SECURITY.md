@@ -186,8 +186,21 @@ only. The file is not stored or uploaded; users should delete it afterwards.
 
 The extension restricts local storage to trusted extension contexts and sets
 `connect-src 'none'`. It uses DOM text nodes, not injected credential HTML.
-There are no host permissions, persistent content scripts, remote assets,
-analytics, or automatic clipboard clearing.
+There are no host permissions, persistent content scripts, remote assets, or
+analytics.
+
+## Clipboard clearing
+
+After a password, previous password, 2FA code, or generated password is copied,
+the page sends `easypwd:copied` (no content) to the background worker. The worker
+accepts it only from this extension's own pages, then sets an alarm for the
+user-selected delay (30, 60, or 120 seconds, or off; default 30). Each new copy
+restarts the delay. When the alarm fires, the worker opens `offscreen.html`,
+which replaces the clipboard with empty text, and closes it. Usernames and
+websites are not cleared. Without `clipboardRead`, EasyPwd can't tell whether the
+clipboard still holds its copy, so it clears it regardless. Clipboard history
+managers, other apps that read the clipboard during the delay, and a browser that
+exits before the alarm are out of scope.
 
 ## Filling pages
 

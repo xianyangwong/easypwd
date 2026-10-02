@@ -5,7 +5,7 @@
   "description": "Remember one passphrase. Get the same strong password for every site, on any device. Offline, no account, no sync.",
   "homepage_url": "https://github.com/xianyangwong/easypwd",
   "minimum_chrome_version": "120",
-  "permissions": ["storage", "clipboardWrite", "activeTab", "scripting"],
+  "permissions": ["storage", "clipboardWrite", "activeTab", "scripting", "alarms", "offscreen"],
   "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
   "action": {
     "default_title": "EasyPwd",

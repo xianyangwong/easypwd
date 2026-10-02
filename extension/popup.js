@@ -1,5 +1,6 @@
 import { normalizeSite, unlockVault, validateEnvelope } from './crypto.js';
 import { guessSite, lookup } from './lookup.js';
+import { copyText } from './clipboard.js';
 import { openVault } from './open-vault.js';
 import { STORAGE_KEY } from './storage.js';
 
@@ -48,7 +49,7 @@ const formatCode = (code) => (code.length === 6 ? `${code.slice(0, 3)} ${code.sl
 
 async function copy(value, label) {
   try {
-    await navigator.clipboard.writeText(value);
+    await copyText(value, label !== 'Username');
     status(`${label} copied`);
   } catch {
     status('Couldn’t access the clipboard.', true);

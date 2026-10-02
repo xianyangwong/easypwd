@@ -5,12 +5,18 @@ storage justification:
 Used to save the user's encrypted password vault and the auto-lock setting in chrome.storage.local on the user's device. The vault is encrypted with AES-256-GCM before it is written. Nothing is synced or sent anywhere.
 
 clipboardWrite justification:
-Used only when the user clicks a Copy button, to copy a username, password, or website to the clipboard so they can paste it into a login form. The extension never copies anything automatically and never reads the clipboard.
+Used only when the user clicks a Copy button, to copy a username, password, or website to the clipboard so they can paste it into a login form. The extension never copies anything automatically and never reads the clipboard. After a password or 2FA code is copied, it can empty the clipboard again after a delay the user chooses.
 
 activeTab justification:
 Used only after the user clicks the EasyPwd toolbar icon or presses its keyboard shortcut. The popup reads the current tab's address to show the saved logins for that website. It grants no access to other tabs or to sites where the user hasn't opened the popup.
 
 scripting justification:
 Used only when the user clicks Fill in the popup, to enter the chosen username and password (or two-factor code) into the login form on the current tab, using the temporary access granted by activeTab. The injected function is bundled with the extension, reads no page content, and sends nothing anywhere.
+
+alarms justification:
+Used to empty the clipboard 30 seconds (or a user-chosen delay) after the user copies a password or two-factor code, so secrets don't stay on the clipboard. The alarm fires even if the popup or vault tab has closed.
+
+offscreen justification:
+Used only when that alarm fires: the extension opens its own hidden page for a moment to empty the clipboard, because the background service worker can't access the clipboard. The page reads nothing and closes right away.
 
 Remote code: No, I am not using remote code.

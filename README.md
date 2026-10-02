@@ -76,12 +76,17 @@ saved passwords.
 - **Two-factor codes (TOTP).** Add a website's 2FA setup key, `otpauth://` link,
   or QR screenshot to a login. The vault and the popup show the current
   6–8 digit code with a countdown, and the popup can fill it.
-- **Health hints.** Flags saved passwords that are reused or shorter than 12
-  characters.
+- **Password health.** Flags weak or reused saved passwords, generated
+  passwords shorter than 12 characters, and logins not changed in over a year.
+  Click **Review** above the list to see only those logins. EasyPwd works
+  offline, so it can't check breach lists; after a site breach, raise a generated
+  login's **Version** to get a new password.
 - **Generator.** Random passwords of 8–64 characters from the character groups
   you choose, with an entropy estimate.
 - **Auto-lock.** Locks after 1, 5, 15, or 30 minutes of inactivity, when you
   click **Lock**, or when the vault tab is closed or reloaded.
+- **Clipboard clearing.** Copied passwords and 2FA codes are cleared from the
+  clipboard after 30 seconds (or 1 or 2 minutes, or never).
 - **Backups.** Export an encrypted JSON backup; restore one from the lock screen
   or Settings. Backups are decrypted and validated before anything is replaced.
 - **Import from Chrome.** Add logins from a Google Password Manager CSV export.
@@ -163,8 +168,10 @@ test passphrase guesses offline. A long, unique passphrase is essential. See
 | `clipboardWrite` | Copy a password after an explicit user action. |
 | `activeTab` | Read the current tab's address, and only after you click the toolbar icon or press the shortcut. |
 | `scripting` | Fill the login form when you click **Fill**, in that tab only. |
+| `alarms` | Clear the clipboard 30 seconds after you copy a password, even if the popup has closed. |
+| `offscreen` | Open a hidden extension page for a moment to clear the clipboard; the background worker can't. |
 
-`activeTab` and `scripting` show no install warning: they grant nothing until
+None of these show an install warning. `activeTab` and `scripting` grant nothing until
 you open the popup on a page, and that access ends when you leave it. There
 are no host permissions, persistent content scripts, remote scripts, or network
 requests. **Fill** injects one small function into the page's top frame after
@@ -173,8 +180,9 @@ whatever is filled into it, as it would if you typed it.
 
 The popup asks an open, unlocked vault tab for the matching logins of the
 current site. The vault tab accepts these requests only from the extension's
-own popup. Master passphrases are never sent between pages, and the background
-worker only sets storage access.
+own popup. Master passphrases are never sent between pages. The background
+worker only sets storage access and schedules clipboard clearing; it is told
+that a secret was copied, never what.
 
 **2FA tradeoff.** Keeping 2FA secrets in the same vault as passwords is
 convenient, but someone who has your master passphrase and the vault gets both
@@ -185,7 +193,9 @@ Unlocked data and a non-extractable encryption key live in the vault page's
 memory. Closing/reloading locks it. The page checks idle expiry on a timer, on
 focus/visibility changes, and before protected actions; background timers may be
 delayed by Chrome. JavaScript cannot guarantee physical memory zeroization.
-Copied passwords remain on the system clipboard; clear it yourself.
+Copied passwords and 2FA codes are cleared after the chosen delay. EasyPwd can't
+read the clipboard, so it clears it even if you copied something else since.
+Clipboard history tools may keep their own copy.
 
 ## Development
 

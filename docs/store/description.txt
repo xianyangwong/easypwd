@@ -19,14 +19,16 @@ FEATURES
 • One-click fill: the toolbar popup finds logins for the current site and fills the form.
 • Two-factor codes (TOTP): paste a setup key or QR screenshot to see and fill 6-digit 2FA codes.
 • Usernames, websites, and notes for every login, with one-click copy.
+• Password health: flags weak, reused, and year-old passwords.
 • Random password generator with a strength estimate.
 • Auto-lock after 1, 5, 15, or 30 minutes of inactivity.
+• Copied passwords are cleared from the clipboard after 30 seconds.
 • Encrypted backups, restore, and import from Chrome's password CSV export.
 • Light and dark themes.
 
 PRIVACY AND SECURITY
 • Everything runs inside the extension. It makes no network requests.
-• No install warnings. "storage" holds the encrypted vault, "clipboardWrite" copies when you click copy, and "activeTab" + "scripting" fill the current page only when you open the popup and click Fill.
+• No install warnings. "storage" holds the encrypted vault, "clipboardWrite" copies when you click copy, and "activeTab" + "scripting" fill the current page only when you open the popup and click Fill, and "alarms" + "offscreen" clear copied passwords from the clipboard.
 • Built on the browser's native Web Crypto: PBKDF2-SHA-256 (600,000 iterations), HKDF, HMAC-SHA-256, and AES-256-GCM.
 • The password algorithm is published with test vectors, so anyone can verify or reimplement it.
 

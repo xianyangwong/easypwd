@@ -10,6 +10,7 @@ import { guessSite, lookup, siteMatches } from '../extension/lookup.js';
 import { createHmac, hkdfSync, pbkdf2Sync } from 'node:crypto';
 import { parseCsv, entriesFromChromeCsv } from '../extension/csv.js';
 import { VaultStorage, STORAGE_KEY, sameVault } from '../extension/storage.js';
+import { isWeak, passwordIssues, STALE_AFTER_MS } from '../extension/health.js';
 
 const master = 'an unrelated set of words for testing';
 const identity = 'test@example.com';
@@ -420,4 +421,33 @@ test('a full vault of realistic logins fits the backup limit', async () => {
   assert.ok(saved.length < MAX_BACKUP_BYTES / 2, `${saved.length} bytes`);
   assert.equal((await unlockVault(parseBackup(saved), master)).entries.length, MAX_ENTRIES);
   assert.throws(() => validateEntries([...entries, { ...entry, id: crypto.randomUUID() }]), /no more than/);
+});
+
+test('password health flags weak, reused, short generated, and stale logins', () => {
+  const now = Date.UTC(2026, 0, 1);
+  const id = (n) => `12345678-1234-4123-8123-${String(n).padStart(12, '0')}`;
+  const saved = (n, password, updatedAt = now) => ({ ...entry, id: id(n), password, updatedAt });
+  const generated = (n, length, updatedAt = now) => ({
+    ...entry, id: id(n), password: '', updatedAt,
+    derive: { site: `site${n}.com`, counter: 1, length, groups: ['lowercase', 'digits'] },
+  });
+  for (const weak of ['password1', 'aaaaaaaaaaaaaaaaaaaa', 'abcdefghijk', 'Ab1!Ab1!Ab1!']) assert.equal(isWeak(weak), true, weak);
+  for (const strong of ['Example-only-password-73!', 'k9#Lm2$pQ7&xZ4']) assert.equal(isWeak(strong), false, strong);
+
+  const issues = passwordIssues([
+    saved(1, 'Shared-Strong-Pass-91!'), saved(2, 'Shared-Strong-Pass-91!'),
+    saved(3, 'short'), saved(4, 'Unique-Strong-Pass-55?'),
+    saved(5, 'Old-But-Strong-Pass-12#', now - STALE_AFTER_MS - 1),
+    generated(6, 8), generated(7, 20), generated(8, 20, now - STALE_AFTER_MS - 1),
+    { ...saved(9, 'No-Date-Strong-Pass-34$'), updatedAt: undefined },
+  ], now);
+  const labels = (n) => issues.get(id(n))?.map((issue) => issue.label);
+  assert.deepEqual(labels(1), ['Reused']);
+  assert.match(issues.get(id(1))[0].text, /1 other login\./);
+  assert.deepEqual(labels(3), ['Weak']);
+  assert.deepEqual(labels(5), ['Over a year old']);
+  assert.deepEqual(labels(6), ['Short']);
+  assert.deepEqual(labels(8), ['Over a year old']);
+  assert.match(issues.get(id(8))[0].text, /raise the Version/);
+  for (const n of [4, 7, 9]) assert.equal(issues.has(id(n)), false, n);
 });

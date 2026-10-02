@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const extension = new URL('../extension/', import.meta.url);
 const manifest = JSON.parse(await readFile(new URL('manifest.json', extension), 'utf8'));
 if (manifest.manifest_version !== 3 ||
-    JSON.stringify(manifest.permissions) !== JSON.stringify(['storage', 'clipboardWrite', 'activeTab', 'scripting']) ||
+    JSON.stringify(manifest.permissions) !== JSON.stringify(['storage', 'clipboardWrite', 'activeTab', 'scripting', 'alarms', 'offscreen']) ||
     manifest.host_permissions || manifest.content_scripts ||
     !manifest.content_security_policy.extension_pages.includes("connect-src 'none'")) {
   throw new Error('Unexpected extension permissions or network policy.');
@@ -24,7 +24,7 @@ for (const file of await readdir(extension)) {
     execFileSync(process.execPath, ['--check', fileURLToPath(new URL(file, extension))], { stdio: 'inherit' });
   }
 }
-for (const file of ['app.js', 'popup.js', 'lookup.js']) {
+for (const file of ['app.js', 'popup.js', 'lookup.js', 'health.js', 'clipboard.js', 'offscreen.js', 'background.js']) {
   if (/\b(?:fetch|XMLHttpRequest|eval)\s*\(|innerHTML\s*=/.test(await readFile(new URL(file, extension), 'utf8'))) {
     throw new Error(`Unexpected network, dynamic execution, or HTML injection API in ${file}.`);
   }

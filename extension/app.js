@@ -3,14 +3,16 @@ import {
   generatePassword, normalizeIdentity, normalizeSite, parseBackup, parseOtp, sealVault, totp, unlockVault, validRules,
   validateEnvelope, validateNewMasterPassword,
 } from './crypto.js';
+import { copyText } from './clipboard.js';
 import { entriesFromChromeCsv } from './csv.js';
+import { passwordIssues } from './health.js';
 import { lookup } from './lookup.js';
 import { STORAGE_KEY, VaultStorage, sameVault } from './storage.js';
 
 const $ = (id) => document.getElementById(id);
 const ALL_GROUPS = GROUP_ORDER;
 const GROUP_LABELS = { lowercase: 'a–z', uppercase: 'A–Z', digits: '0–9', symbols: 'symbols' };
-const DEFAULT_SETTINGS = { autoLockMinutes: 5, lastBackupAt: null, generator: { length: 20, groups: ALL_GROUPS } };
+const DEFAULT_SETTINGS = { autoLockMinutes: 5, clearClipboardSeconds: 30, lastBackupAt: null, generator: { length: 20, groups: ALL_GROUPS } };
 const MASK = '••••••••••••';
 
 const storage = globalThis.chrome?.storage ? new VaultStorage(chrome.storage.local, navigator.locks) : null;
@@ -191,6 +193,7 @@ function lock(notice = '') {
   epoch += 1;
   session = null;
   derived.clear();
+  healthOnly = false;
   selectedId = null;
   editingId = undefined;
   revealed = false;
@@ -347,9 +350,13 @@ $('lock-btn').addEventListener('click', () => lock());
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' });
 
+let healthOnly = false; // Items list shows only logins with health issues.
+let issues = new Map();
+
 function visibleEntries() {
   const query = $('search').value.trim().toLowerCase();
   return session.entries
+    .filter((entry) => !healthOnly || issues.has(entry.id))
     .filter((entry) => !query || [entry.name, entry.username, hostOf(entry.url), entry.derive?.site ?? '']
       .some((text) => text.toLowerCase().includes(query)))
     .sort(byName);
@@ -357,6 +364,8 @@ function visibleEntries() {
 
 function renderItems() {
   if (!session) return;
+  issues = passwordIssues(session.entries);
+  if (!issues.size) healthOnly = false;
   const entries = visibleEntries();
   const query = $('search').value.trim();
   $('entries').replaceChildren(...entries.map((entry) => {
@@ -364,7 +373,9 @@ function renderItems() {
       avatar(entry.name),
       el('span', { className: 'item-text' }, [
         el('span', { className: 'item-name', textContent: entry.name }),
-        el('span', { className: 'item-sub', textContent: entry.username || entry.derive?.site || hostOf(entry.url) || '—' }),
+        healthOnly ?
+          el('span', { className: 'item-sub item-issue', textContent: issues.get(entry.id).map((issue) => issue.label).join(' · ') }) :
+          el('span', { className: 'item-sub', textContent: entry.username || entry.derive?.site || hostOf(entry.url) || '—' }),
       ]),
     ]);
     if (entry.id === selectedId) button.setAttribute('aria-current', 'true');
@@ -374,6 +385,11 @@ function renderItems() {
   $('list-empty').textContent = session.entries.length === 0 && !query ?
     'No logins yet. Type a website above, or click + to add one.' :
     entries.length === 0 ? `No logins match “${query}”.` : '';
+  $('health-nudge').hidden = !issues.size;
+  $('health-nudge').replaceChildren(healthOnly ?
+    `Showing ${issues.size} login${issues.size === 1 ? '' : 's'} that need attention. ` :
+    `${issues.size} login${issues.size === 1 ? ' needs' : 's need'} attention. `,
+  el('span', { textContent: healthOnly ? 'Show all' : 'Review' }));
   const site = normalizeSite(query);
   const suggest = entries.length === 0 && /^[^\s]+\.[a-z]{2,}$/.test(site);
   $('create-from-search').hidden = !suggest;
@@ -442,13 +458,7 @@ function renderDetail() {
   $('dv-notes').textContent = entry.notes;
   $('dv-updated').textContent = entry.updatedAt ? `Last edited ${formatDate(entry.updatedAt)}` : '';
 
-  const warnings = [];
-  if (!entry.derive) {
-    const reused = session.entries.filter((other) => other.id !== entry.id && !other.derive && other.password === entry.password).length;
-    if (reused) warnings.push(`This password is also used for ${reused} other login${reused === 1 ? '' : 's'}.`);
-    if (entry.password.length < 12) warnings.push('This password is short. Consider switching this login to a generated password.');
-  }
-  $('dv-warnings').replaceChildren(...warnings.map((text) => el('li', {}, [warnIcon(), text])));
+  $('dv-warnings').replaceChildren(...(issues.get(entry.id) ?? []).map(({ text }) => el('li', {}, [warnIcon(), text])));
 }
 
 // ---------- Two-factor codes ----------
@@ -516,7 +526,7 @@ for (const button of document.querySelectorAll('[data-copy]')) {
     try {
       const value = field === 'otp' ? (await totp(entry.otp)).code :
         field === 'password' || field === 'previous' ? await passwordFor(entry, field === 'previous') : entry[field];
-      await navigator.clipboard.writeText(value);
+      await copyText(value, field !== 'username' && field !== 'url');
       toast(`${labels[field]} copied`);
     } catch {
       toast('Couldn’t access the clipboard. Click the page and try again.', true);
@@ -698,7 +708,7 @@ $('preview-copy').addEventListener('click', async () => {
   const preview = $('entry-preview');
   if (!isActive() || !preview.textContent || preview.classList.contains('placeholder')) return;
   try {
-    await navigator.clipboard.writeText(preview.textContent);
+    await copyText(preview.textContent, true);
     toast('Password copied');
   } catch {
     toast('Couldn’t access the clipboard. Click the page and try again.', true);
@@ -847,7 +857,7 @@ $('gen-refresh').addEventListener('click', regenerate);
 $('gen-copy').addEventListener('click', async () => {
   if (!isActive()) return;
   try {
-    await navigator.clipboard.writeText($('gen-value').value);
+    await copyText($('gen-value').value, true);
     toast('Password copied');
   } catch {
     toast('Couldn’t access the clipboard. Click the page and try again.', true);
@@ -866,6 +876,8 @@ function applySettings(value) {
   const groups = Array.isArray(generator.groups) ? generator.groups.filter((group) => ALL_GROUPS.includes(group)) : [];
   settings = {
     autoLockMinutes: [1, 5, 15, 30].includes(stored.autoLockMinutes) ? stored.autoLockMinutes : DEFAULT_SETTINGS.autoLockMinutes,
+    clearClipboardSeconds: [0, 30, 60, 120].includes(stored.clearClipboardSeconds) ?
+      stored.clearClipboardSeconds : DEFAULT_SETTINGS.clearClipboardSeconds,
     lastBackupAt: Number.isSafeInteger(stored.lastBackupAt) ? stored.lastBackupAt : null,
     generator: {
       length: Number.isInteger(generator.length) && generator.length >= 8 && generator.length <= 64 ? generator.length : 20,
@@ -881,6 +893,7 @@ function applySettings(value) {
 
 function renderSettings() {
   $('autolock').value = String(settings.autoLockMinutes);
+  $('clipboard-clear').value = String(settings.clearClipboardSeconds);
   $('last-backup').textContent = settings.lastBackupAt ?
     `Last exported ${formatDate(settings.lastBackupAt)}.` :
     'Not exported yet. Keep a backup somewhere other than this browser.';
@@ -894,6 +907,13 @@ $('autolock').addEventListener('change', () => {
   settings.autoLockMinutes = Number($('autolock').value);
   saveSettings();
   toast('Auto-lock updated');
+});
+
+$('clipboard-clear').addEventListener('change', () => {
+  if (!isActive()) return;
+  settings.clearClipboardSeconds = Number($('clipboard-clear').value);
+  saveSettings();
+  toast('Clipboard setting updated');
 });
 
 function exportBackup() {
@@ -911,6 +931,11 @@ function exportBackup() {
 }
 $('export').addEventListener('click', exportBackup);
 $('backup-nudge').addEventListener('click', exportBackup);
+$('health-nudge').addEventListener('click', () => {
+  if (!isActive()) return;
+  healthOnly = !healthOnly;
+  renderItems();
+});
 
 $('open-import').addEventListener('click', () => { if (isActive()) $('import-file').click(); });
 $('import-file').addEventListener('change', async () => {
@@ -1134,6 +1159,7 @@ if (globalThis.chrome?.runtime?.onMessage) {
 // ---------- Start ----------
 
 async function start() {
+  $('app-version').textContent = globalThis.chrome?.runtime?.getManifest?.().version ?? '';
   if (!storage) {
     renderLock();
     $('master').disabled = true;

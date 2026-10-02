@@ -78,6 +78,7 @@
           <button id="new-entry" type="button" class="btn primary icon-only" aria-label="New login" title="New login"><svg class="icon"><use href="#i-plus"/></svg></button>
         </div>
         <button id="backup-nudge" type="button" class="nudge" hidden>You haven’t backed up this vault yet. <span>Export a backup</span></button>
+        <button id="health-nudge" type="button" class="nudge" hidden></button>
         <ul id="entries" class="item-list"></ul>
         <p id="list-empty" class="empty"></p>
         <button id="create-from-search" type="button" class="btn suggest" hidden></button>
@@ -273,6 +274,15 @@
             </select>
           </div>
           <div class="setting">
+            <div><h3><label for="clipboard-clear">Clear copied passwords</label></h3><p class="muted">Empty the clipboard after you copy a password or 2FA code, even if you copied something else since.</p></div>
+            <select id="clipboard-clear">
+              <option value="30">After 30 seconds</option>
+              <option value="60">After 1 minute</option>
+              <option value="120">After 2 minutes</option>
+              <option value="0">Never</option>
+            </select>
+          </div>
+          <div class="setting">
             <div><h3>Master passphrase</h3><p class="muted">Changing it changes every generated password, so EasyPwd saves their current values first.</p></div>
             <button id="open-change-pass" type="button" class="btn">Change…</button>
           </div>
@@ -303,7 +313,7 @@
           </div>
         </div>
 
-        <p class="about muted">EasyPwd 0.2.0 · Works offline, no network access · <a href="https://github.com/xianyangwong/easypwd" target="_blank" rel="noopener noreferrer">Source code</a></p>
+        <p class="about muted">EasyPwd <span id="app-version"></span> · Works offline, no network access · <a href="https://github.com/xianyangwong/easypwd" target="_blank" rel="noopener noreferrer">Source code</a></p>
       </div>
     </main>
   </div>
