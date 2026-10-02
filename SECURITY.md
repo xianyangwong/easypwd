@@ -216,6 +216,23 @@ generated-password site or the saved URL's host: a login for `example.com`
 matches `example.com` and its subdomains, and the other way round. Plain
 `http:` pages are flagged as not secure.
 
+## Matching site rules
+
+**Match site rules** runs only when clicked, through the same `activeTab` +
+`scripting` path as Fill (host re-check, top frame). The injected function
+returns visible text near password fields and lines that mention password
+requirements (capped at 4,000 characters), plus the fields' `minlength` and
+`maxlength`. It reads no field values. If Chrome's built-in Prompt API
+(`LanguageModel`, Gemini Nano) reports the model as available, the text is sent
+to that on-device model with a JSON schema; the answer is treated as untrusted
+and only mapped to a length of 8–64 and a non-empty set of character groups.
+Passwords, the passphrase, and vault data are never given to the model. Chrome
+downloads and runs the model itself; EasyPwd makes no network requests and
+needs no extra permission. Otherwise, or if the model fails or takes over 30
+seconds, a small rule-based parser is used. A hostile page can at most choose
+weaker-but-valid rules (for example 8 characters, no symbols), so the popup
+shows the rules it applied before you fill or save.
+
 ## Two-factor codes
 
 Logins may have an `otp` object `{ secret, digits, period, algorithm }`:

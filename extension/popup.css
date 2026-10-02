@@ -117,3 +117,7 @@ label { display: block; font-weight: 550; }
 .status { margin-top: 10px; font-size: 12px; color: var(--muted); min-height: 1em; }
 .status.bad { color: var(--danger); }
 .status:empty { display: none; }
+
+.rules { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: -2px 0 8px; }
+.rules .link { padding: 0; white-space: nowrap; }
+#suggest-rules-note { margin: -4px 0 8px; }

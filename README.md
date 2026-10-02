@@ -76,6 +76,13 @@ saved passwords.
 - **Two-factor codes (TOTP).** Add a website's 2FA setup key, `otpauth://` link,
   or QR screenshot to a login. The vault and the popup show the current
   6–8 digit code with a countdown, and the popup can fill it.
+- **Match site rules (on-device AI).** On a sign-up or change-password page,
+  click **Match site rules** in the popup. EasyPwd reads the page's password
+  requirements ("8–16 characters, no special characters") and the field's
+  `minlength`/`maxlength`, then generates a password that fits. It uses Chrome's
+  built-in Gemini Nano model when your device supports it, and a built-in
+  reader for common phrasings otherwise. Nothing leaves your device. **Save to
+  vault** keeps the rules with the login.
 - **Password health.** Flags weak or reused saved passwords, generated
   passwords shorter than 12 characters, and logins not changed in over a year.
   Click **Review** above the list to see only those logins. EasyPwd works
@@ -167,7 +174,7 @@ test passphrase guesses offline. A long, unique passphrase is essential. See
 | `storage` | Store the encrypted vault in `chrome.storage.local`. |
 | `clipboardWrite` | Copy a password after an explicit user action. |
 | `activeTab` | Read the current tab's address, and only after you click the toolbar icon or press the shortcut. |
-| `scripting` | Fill the login form when you click **Fill**, in that tab only. |
+| `scripting` | Fill the login form when you click **Fill**, or read the page's password rules when you click **Match site rules**, in that tab only. |
 | `alarms` | Clear the clipboard 30 seconds after you copy a password, even if the popup has closed. |
 | `offscreen` | Open a hidden extension page for a moment to clear the clipboard; the background worker can't. |
 

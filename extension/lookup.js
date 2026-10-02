@@ -1,4 +1,4 @@
-import { DEFAULT_RULES, derivePassword, normalizeSite, totp } from './crypto.js';
+import { DEFAULT_RULES, derivePassword, normalizeSite, totp, validRules } from './crypto.js';
 
 // The site a login belongs to: its generated-password site, or its website's host.
 export function entrySite(entry) {
@@ -21,7 +21,7 @@ export function guessSite(host) {
   return labels.slice(secondLevel ? -3 : -2).join('.');
 }
 
-export async function lookup({ entries, siteKey }, { host, site }) {
+export async function lookup({ entries, siteKey }, { host, site, rules }) {
   const matches = await Promise.all(entries
     .filter((entry) => siteMatches(entrySite(entry), host))
     .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }))
@@ -35,8 +35,9 @@ export async function lookup({ entries, siteKey }, { host, site }) {
       otp: entry.otp ? await totp(entry.otp) : null,
     })));
   const suggestSite = normalizeSite(site || guessSite(host));
+  const { length, groups } = validRules(rules?.length, rules?.groups) ? rules : DEFAULT_RULES;
   const suggestion = suggestSite ?
-    { site: suggestSite, password: await derivePassword(siteKey, { site: suggestSite, counter: 1, ...DEFAULT_RULES }) } :
+    { site: suggestSite, length, groups, password: await derivePassword(siteKey, { site: suggestSite, counter: 1, length, groups }) } :
     null;
   return { matches, suggestion };
 }

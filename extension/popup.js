@@ -3,6 +3,7 @@ import { guessSite, lookup } from './lookup.js';
 import { copyText } from './clipboard.js';
 import { openVault } from './open-vault.js';
 import { STORAGE_KEY } from './storage.js';
+import { aiAvailability, aiRules, collectRuleText, describeRules, parseRules, rulesFor, startAiDownload } from './site-rules.js';
 
 const $ = (id) => document.getElementById(id);
 const MASK = '••••••••••••';
@@ -14,6 +15,7 @@ let local = null; // { entries, siteKey } when unlocked in this popup. Gone when
 let result = null;
 let suggestRevealed = false;
 let refreshing = false;
+let siteRules = null; // { length, groups } read from the page, or null for the defaults.
 
 function el(tag, props = {}, children = []) {
   const node = Object.assign(document.createElement(tag), props);
@@ -186,6 +188,8 @@ function renderSuggestion() {
   $('suggest-reveal').setAttribute('aria-label', suggestRevealed ? 'Hide password' : 'Show password');
   $('suggest-reveal').querySelector('use').setAttribute('href', suggestRevealed ? '#i-eye-off' : '#i-eye');
   for (const id of ['suggest-fill', 'suggest-copy', 'suggest-save']) $(id).disabled = !password;
+  const suggestion = result?.suggestion;
+  $('suggest-rules').textContent = suggestion ? describeRules(suggestion) : '';
 }
 
 function render() {
@@ -218,10 +222,10 @@ function tickOtp() {
 // ---------- Vault access ----------
 
 async function query() {
-  if (local) return lookup(local, { host, site });
+  if (local) return lookup(local, { host, site, rules: siteRules });
   try {
     // An unlocked vault tab answers; locked or closed ones don't.
-    return (await chrome.runtime.sendMessage({ type: 'easypwd:lookup', host, site })) ?? null;
+    return (await chrome.runtime.sendMessage({ type: 'easypwd:lookup', host, site, rules: siteRules })) ?? null;
   } catch {
     return null;
   }
@@ -301,7 +305,61 @@ $('suggest-fill').addEventListener('click', () => fillMatch({ username: '', pass
 function openAndClose(hash) {
   openVault(hash).then(() => window.close(), (error) => status(error.message, true));
 }
-$('suggest-save').addEventListener('click', () => openAndClose(`#new=${encodeURIComponent(result.suggestion.site)}`));
+$('suggest-save').addEventListener('click', () => {
+  const { site: name, length, groups } = result.suggestion;
+  openAndClose(`#${new URLSearchParams({ new: name, length: String(length), groups: groups.join(',') })}`);
+});
+
+function rulesNote(message) {
+  $('suggest-rules-note').textContent = message;
+  $('suggest-rules-note').hidden = !message;
+}
+
+// Reads the page's password requirements, on-device, and regenerates to match them.
+$('suggest-check').addEventListener('click', async () => {
+  const button = $('suggest-check');
+  button.disabled = true;
+  button.textContent = 'Reading page…';
+  rulesNote('');
+  try {
+    const page = await inject(collectRuleText, []);
+    if (!page?.text && !page?.minLength && !page?.maxLength) {
+      rulesNote('No password requirements found on this page. Open the sign-up or change-password page.');
+      return;
+    }
+    let found = null;
+    let source = 'built-in reader';
+    const availability = page.text ? await aiAvailability() : 'unavailable';
+    if (availability === 'available') {
+      try {
+        button.textContent = 'Reading with on-device AI…';
+        found = await aiRules(page.text);
+        source = 'on-device AI';
+      } catch { /* fall back to the built-in reader */ }
+    } else if (availability === 'downloadable') {
+      startAiDownload();
+    }
+    if (source !== 'on-device AI') found = parseRules(page.text);
+    if (!found && !page.minLength && !page.maxLength) {
+      rulesNote('No password requirements found on this page. Keeping the default rules.');
+      return;
+    }
+    const rules = rulesFor(found ?? {}, page);
+    if (!rules) {
+      rulesNote('This site’s rules can’t be met by a generated password. Use a saved password instead.');
+      return;
+    }
+    siteRules = rules;
+    rulesNote(`Matched the site’s rules (read by ${source}). Save to vault to keep them.` +
+      (availability === 'downloadable' || availability === 'downloading' ? ' Chrome is downloading its on-device AI model for next time.' : ''));
+    await refresh();
+  } catch (error) {
+    rulesNote(error.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Match site rules';
+  }
+});
 $('add-login').addEventListener('click', () => openAndClose(`#new=${encodeURIComponent(guessSite(host))}`));
 $('open-vault').addEventListener('click', () => openAndClose(''));
 $('setup-open').addEventListener('click', () => openAndClose(''));

@@ -11,7 +11,7 @@ activeTab justification:
 Used only after the user clicks the EasyPwd toolbar icon or presses its keyboard shortcut. The popup reads the current tab's address to show the saved logins for that website. It grants no access to other tabs or to sites where the user hasn't opened the popup.
 
 scripting justification:
-Used only when the user clicks Fill in the popup, to enter the chosen username and password (or two-factor code) into the login form on the current tab, using the temporary access granted by activeTab. The injected function is bundled with the extension, reads no page content, and sends nothing anywhere.
+Used only when the user clicks a button in the popup, on the current tab, using the temporary access granted by activeTab. Fill enters the chosen username and password (or two-factor code) into the login form. Match site rules reads the password requirements shown next to the password field (text and minlength/maxlength, never field values) so the generated password fits them; that text is processed on the device, by Chrome's built-in AI model or a bundled parser, and never sent anywhere. The injected functions are bundled with the extension.
 
 alarms justification:
 Used to empty the clipboard 30 seconds (or a user-chosen delay) after the user copies a password or two-factor code, so secrets don't stay on the clipboard. The alarm fires even if the popup or vault tab has closed.

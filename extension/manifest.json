@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "EasyPwd",
-  "version": "0.4.0",
+  "version": "1.0.0",
   "description": "Remember one passphrase. Get the same strong password for every site, on any device. Offline, no account, no sync.",
   "homepage_url": "https://github.com/xianyangwong/easypwd",
   "minimum_chrome_version": "120",

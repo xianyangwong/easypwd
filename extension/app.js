@@ -628,12 +628,12 @@ function setMode(mode) {
   renderMode();
 }
 
-function openEditor(id, site = '') {
+function openEditor(id, site = '', rules = DEFAULT_RULES) {
   if (!isActive()) return;
   const entry = id ? session.entries.find((item) => item.id === id) : null;
   editingId = entry ? entry.id : null;
   editorOriginal = entry?.derive ?? null;
-  const spec = entry?.derive ?? { site, counter: 1, ...DEFAULT_RULES };
+  const spec = entry?.derive ?? { site, counter: 1, ...rules };
   $('form-title').textContent = entry ? 'Edit login' : 'New login';
   $('entry-site').value = spec.site;
   $('entry-length').value = String(spec.length);
@@ -1126,16 +1126,18 @@ if (storage) {
 
 // The popup opens vault.html#new=<site> to save a login for the page the user is on.
 function openFromHash() {
-  const match = /^#new=(.*)$/.exec(location.hash);
-  if (!match || !isActive()) return;
+  if (!location.hash.startsWith('#new=') || !isActive()) return;
+  const params = new URLSearchParams(location.hash.slice(1));
   history.replaceState(null, '', location.pathname);
   let site = '';
-  try { site = normalizeSite(decodeURIComponent(match[1])).slice(0, 1_024); } catch { /* ignore */ }
+  try { site = normalizeSite(params.get('new') ?? '').slice(0, 1_024); } catch { /* ignore */ }
+  const length = Number(params.get('length'));
+  const groups = (params.get('groups') ?? '').split(',');
   setView('items');
   selectedId = null;
   $('search').value = '';
   renderItems();
-  openEditor(null, site);
+  openEditor(null, site, validRules(length, groups) ? { length, groups } : DEFAULT_RULES);
 }
 window.addEventListener('hashchange', openFromHash);
 

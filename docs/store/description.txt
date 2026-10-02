@@ -15,6 +15,7 @@ FEATURES
 • Password versions: if a site is breached, click "New password" to move to the next version. The previous password stays visible until you've updated the site.
 • Per-site rules: set the length (8–64) and character types for sites with limits.
 • Key fingerprint: four words confirm you typed the same email and passphrase on every device. Different words mean a typo.
+• Match site rules with on-device AI: reads a sign-up page's password requirements with Chrome's built-in Gemini Nano (or a built-in reader) and generates a password that fits. Nothing leaves your device.
 • Saved logins: store existing passwords, PINs, and Wi-Fi keys in an AES-256-GCM encrypted vault.
 • One-click fill: the toolbar popup finds logins for the current site and fills the form.
 • Two-factor codes (TOTP): paste a setup key or QR screenshot to see and fill 6-digit 2FA codes.
@@ -28,7 +29,7 @@ FEATURES
 
 PRIVACY AND SECURITY
 • Everything runs inside the extension. It makes no network requests.
-• No install warnings. "storage" holds the encrypted vault, "clipboardWrite" copies when you click copy, and "activeTab" + "scripting" fill the current page only when you open the popup and click Fill, and "alarms" + "offscreen" clear copied passwords from the clipboard.
+• No install warnings. "storage" holds the encrypted vault, "clipboardWrite" copies when you click copy, and "activeTab" + "scripting" fill the current page or read its password rules only when you open the popup and click Fill or Match site rules, and "alarms" + "offscreen" clear copied passwords from the clipboard.
 • Built on the browser's native Web Crypto: PBKDF2-SHA-256 (600,000 iterations), HKDF, HMAC-SHA-256, and AES-256-GCM.
 • The password algorithm is published with test vectors, so anyone can verify or reimplement it.
 

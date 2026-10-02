@@ -24,7 +24,7 @@ for (const file of await readdir(extension)) {
     execFileSync(process.execPath, ['--check', fileURLToPath(new URL(file, extension))], { stdio: 'inherit' });
   }
 }
-for (const file of ['app.js', 'popup.js', 'lookup.js', 'health.js', 'clipboard.js', 'offscreen.js', 'background.js']) {
+for (const file of ['app.js', 'popup.js', 'lookup.js', 'health.js', 'clipboard.js', 'offscreen.js', 'background.js', 'site-rules.js']) {
   if (/\b(?:fetch|XMLHttpRequest|eval)\s*\(|innerHTML\s*=/.test(await readFile(new URL(file, extension), 'utf8'))) {
     throw new Error(`Unexpected network, dynamic execution, or HTML injection API in ${file}.`);
   }

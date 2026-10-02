@@ -1,6 +1,6 @@
 {
   "name": "easypwd",
-  "version": "0.4.0",
+  "version": "1.0.0",
   "description": "An offline Chrome extension that generates the same strong password for every site from one passphrase.",
   "license": "MIT",
   "private": true,

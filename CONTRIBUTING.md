@@ -36,6 +36,10 @@ Use a disposable Chrome profile and fake credentials.
    clipboard is empty 30 seconds later (also after copying from the popup), that
    a copied username stays, and that **Never** in Settings keeps the password.
    Add weak and reused saved passwords and check that **Review** lists them.
+   On a page with "8-16 characters, no special characters" next to a password
+   field, click **Match site rules** in the popup: the suggestion must change to
+   16 characters without symbols, and **Save to vault** must open the editor
+   with the same length, groups, and preview.
 5. Lock and check that inputs and credential names disappear. A wrong
    passphrase must fail with a clear message, keep the field selected for
    retyping, and leave the vault unchanged. Caps Lock should show a warning.

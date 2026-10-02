@@ -451,3 +451,63 @@ test('password health flags weak, reused, short generated, and stale logins', ()
   assert.match(issues.get(id(8))[0].text, /raise the Version/);
   for (const n of [4, 7, 9]) assert.equal(issues.has(id(n)), false, n);
 });
+
+test('site rules: rule-based parser reads common phrasings', async () => {
+  const { parseRules } = await import('../extension/site-rules.js');
+  assert.deepEqual(
+    pick(parseRules('Password must be 8-16 characters long and cannot contain special characters.')),
+    { minLength: 8, maxLength: 16, symbols: false });
+  assert.deepEqual(pick(parseRules('Use at least 12 characters')), { minLength: 12, maxLength: null, symbols: true });
+  assert.deepEqual(pick(parseRules('Maximum of 20 characters. Letters and numbers only.')), { minLength: null, maxLength: 20, symbols: false });
+  assert.equal(parseRules('Only these special characters are allowed: ! @ #').symbols, false);
+  assert.equal(parseRules('Enter your 6-digit PIN').lowercase, false);
+  assert.equal(parseRules('Forgot your password? Sign in'), null);
+  function pick(found) {
+    return { minLength: found.minLength, maxLength: found.maxLength, symbols: found.symbols };
+  }
+});
+
+test('site rules: requirements map to the strongest valid rules', async () => {
+  const { rulesFor, describeRules } = await import('../extension/site-rules.js');
+  assert.deepEqual(rulesFor({ minLength: 8, maxLength: 16, symbols: false }),
+    { length: 16, groups: ['lowercase', 'uppercase', 'digits'] });
+  assert.deepEqual(rulesFor({ minLength: 32 }), { length: 32, groups: ['lowercase', 'uppercase', 'digits', 'symbols'] });
+  assert.deepEqual(rulesFor({}, { maxLength: 12 }).length, 12);
+  assert.deepEqual(rulesFor({ maxLength: 20 }, { maxLength: 10 }).length, 10);
+  assert.equal(rulesFor({ maxLength: 6 }), null);
+  assert.equal(rulesFor({ lowercase: false, uppercase: false, digits: false, symbols: false }), null);
+  assert.equal(describeRules({ length: 16, groups: ['lowercase', 'digits'] }), '16 characters · a–z 0–9');
+});
+
+test('site rules: on-device model answer is validated and the session destroyed', async () => {
+  const { aiAvailability, aiRules } = await import('../extension/site-rules.js');
+  let destroyed = false;
+  let schema = null;
+  const model = {
+    availability: async () => 'available',
+    create: async () => ({
+      prompt: async (_text, options) => {
+        schema = options.responseConstraint;
+        return JSON.stringify({ found: true, minLength: 10, maxLength: 5000, lowercaseAllowed: true,
+          uppercaseAllowed: true, digitsAllowed: true, anySymbolAllowed: false });
+      },
+      destroy: () => { destroyed = true; },
+    }),
+  };
+  assert.equal(await aiAvailability(model), 'available');
+  assert.equal(await aiAvailability(undefined), 'unavailable');
+  assert.equal(await aiAvailability({ availability: () => new Promise(() => {}) }, 10), 'unavailable');
+  assert.deepEqual(await aiRules('8+ chars', { model }),
+    { minLength: 10, maxLength: null, lowercase: true, uppercase: true, digits: true, symbols: false });
+  assert.equal(schema.type, 'object');
+  assert.ok(destroyed);
+});
+
+test('lookup suggestion honors valid site rules and ignores invalid ones', async () => {
+  const siteKey = await crypto.subtle.importKey('raw', new Uint8Array(32), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const custom = await lookup({ entries: [], siteKey }, { host: 'example.com', site: '', rules: { length: 12, groups: ['lowercase', 'digits'] } });
+  assert.equal(custom.suggestion.password.length, 12);
+  assert.match(custom.suggestion.password, /^[a-z0-9]+$/);
+  const fallback = await lookup({ entries: [], siteKey }, { host: 'example.com', site: '', rules: { length: 4, groups: ['x'] } });
+  assert.equal(fallback.suggestion.length, 20);
+});
