@@ -200,6 +200,8 @@ function render() {
   $('matches').replaceChildren(...result.matches.map(renderMatch));
   const none = result.matches.length === 0;
   $('suggest').hidden = !none;
+  $('lookalike').hidden = !result.lookalike;
+  $('lookalike-site').textContent = result.lookalike ?? '';
   $('add-login').hidden = none;
   if (none && document.activeElement !== $('suggest-site')) $('suggest-site').value = result.suggestion?.site ?? site;
   renderSuggestion();

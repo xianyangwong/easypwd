@@ -46,6 +46,10 @@
   <section id="results" hidden>
     <ul id="matches" class="matches"></ul>
     <section id="suggest" class="panel" hidden>
+      <div id="lookalike" class="alert" role="alert" hidden>
+        <svg class="icon"><use href="#i-warn"/></svg>
+        <p><strong>Possible fake site.</strong> This address looks like <b id="lookalike-site"></b>, where your login is saved, but it isn’t. Check the address before you type anything.</p>
+      </div>
       <h2 id="suggest-title">No saved login for this site</h2>
       <label for="suggest-site">Generate for</label>
       <input id="suggest-site" maxlength="1024" autocomplete="off" spellcheck="false">

@@ -73,10 +73,11 @@
           <div class="search">
             <svg class="icon icon-sm"><use href="#i-search"/></svg>
             <label for="search" class="sr-only">Search logins</label>
-            <input id="search" type="search" placeholder="Search" autocomplete="off" spellcheck="false">
+            <input id="search" type="search" placeholder="Search, or try “weak passwords”" autocomplete="off" spellcheck="false">
           </div>
           <button id="new-entry" type="button" class="btn primary icon-only" aria-label="New login" title="New login"><svg class="icon"><use href="#i-plus"/></svg></button>
         </div>
+        <p id="search-hint" class="search-hint" role="status" hidden></p>
         <button id="backup-nudge" type="button" class="nudge" hidden>You haven’t backed up this vault yet. <span>Export a backup</span></button>
         <button id="health-nudge" type="button" class="nudge" hidden></button>
         <ul id="entries" class="item-list"></ul>

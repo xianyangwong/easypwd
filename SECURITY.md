@@ -233,6 +233,26 @@ seconds, a small rule-based parser is used. A hostile page can at most choose
 weaker-but-valid rules (for example 8 characters, no symbols), so the popup
 shows the rules it applied before you fill or save.
 
+## Fake-site warning
+
+When the popup has no login for the current host, `lookalikeOf` compares the
+host with the sites of saved logins: the same name on another domain, the name
+as a subdomain or hyphenated part (`paypal.com.evil.net`, `paypal-login.com`),
+common character swaps (`rn`→`m`, `1`→`l`, `0`→`o`), a small edit distance, and
+punycode whose plain letters fit the name. It runs locally on data already in
+the lookup. It can't detect every phishing page (a completely different
+domain is not flagged) and may flag a legitimate sister domain, so it warns and
+never blocks.
+
+## Plain-language search
+
+Search phrases are parsed locally into filters (2FA, no username, weak, reused,
+old, generated, saved, notes) and words. When Chrome's built-in model reports
+`available` and a multi-word search finds nothing, pressing Enter sends only
+the typed query to the on-device model, which returns words and filter names
+under a JSON schema; unknown filters are dropped. Vault entries, passwords,
+and notes are matched in the page and are never given to the model.
+
 ## Two-factor codes
 
 Logins may have an `otp` object `{ secret, digits, period, algorithm }`:

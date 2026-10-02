@@ -360,3 +360,4 @@ dialog label { margin-top: 6px; font-size: 13px; color: var(--muted); }
   background: conic-gradient(var(--accent) calc(var(--p) * 360deg), var(--surface-2) 0);
 }
 .otp-timer.low { background: conic-gradient(var(--danger) calc(var(--p) * 360deg), var(--surface-2) 0); }
+.search-hint { margin: 8px 14px 0; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }

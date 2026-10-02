@@ -83,6 +83,14 @@ saved passwords.
   built-in Gemini Nano model when your device supports it, and a built-in
   reader for common phrasings otherwise. Nothing leaves your device. **Save to
   vault** keeps the rules with the login.
+- **Fake-site warning.** When the popup finds no login for the current site
+  but the address imitates one you saved (`paypa1.com`, `paypal-login.com`,
+  `paypal.com.evil.net`, look-alike Unicode letters), it warns you before you
+  type anything. Offline and heuristic: a hint, not a guarantee.
+- **Plain-language search.** Search the vault with phrases such as "weak
+  passwords", "gmail with 2FA", or "logins without a username". With Chrome's
+  on-device AI available, press Enter on longer questions to let it interpret
+  them; only your question is given to the model, never vault data.
 - **Password health.** Flags weak or reused saved passwords, generated
   passwords shorter than 12 characters, and logins not changed in over a year.
   Click **Review** above the list to see only those logins. EasyPwd works

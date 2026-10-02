@@ -6,7 +6,7 @@ import {
   sealVault, estimateBits, deriveKey, deriveKeys, derivePassword, normalizeSite, normalizeIdentity,
   FINGERPRINT_WORDS, GROUPS, parseOtp, totp, DEFAULT_RULES,
 } from '../extension/crypto.js';
-import { guessSite, lookup, siteMatches } from '../extension/lookup.js';
+import { guessSite, lookalikeOf, lookup, siteMatches } from '../extension/lookup.js';
 import { createHmac, hkdfSync, pbkdf2Sync } from 'node:crypto';
 import { parseCsv, entriesFromChromeCsv } from '../extension/csv.js';
 import { VaultStorage, STORAGE_KEY, sameVault } from '../extension/storage.js';
@@ -510,4 +510,31 @@ test('lookup suggestion honors valid site rules and ignores invalid ones', async
   assert.match(custom.suggestion.password, /^[a-z0-9]+$/);
   const fallback = await lookup({ entries: [], siteKey }, { host: 'example.com', site: '', rules: { length: 4, groups: ['x'] } });
   assert.equal(fallback.suggestion.length, 20);
+});
+
+test('lookalike sites of saved logins are flagged, real ones are not', () => {
+  const sites = ['paypal.com', 'github.com', 'microsoft.com', 'x.com'];
+  for (const host of ['paypa1.com', 'paypal-login.com', 'paypal.com.evil.net', 'gitbub.com', 'rnicrosoft.com', 'xn--pypal-4ve.com', 'paypal.de']) {
+    assert.ok(lookalikeOf(host, sites), host);
+  }
+  for (const host of ['paypal.com', 'www.paypal.com', 'gist.github.com', 'example.com', 'xn--80ak6aa92e.com', 'githubusercontent.com', 'y.com']) {
+    assert.equal(lookalikeOf(host, sites), null, host);
+  }
+});
+
+test('plain-language search parses filters and matches entries', async () => {
+  const { parseQuery, matchesQuery, describeQuery, aiQuery } = await import('../extension/search.js');
+  assert.deepEqual(parseQuery('show me weak passwords'), { terms: [], filters: { weak: true } });
+  assert.deepEqual(parseQuery('gmail logins with 2FA'), { terms: ['gmail'], filters: { otp: true } });
+  assert.deepEqual(parseQuery('accounts without any 2fa'), { terms: [], filters: { noOtp: true } });
+  assert.deepEqual(parseQuery('github.com'), { terms: ['github.com'], filters: {} });
+  assert.deepEqual(parseQuery('saved passwords not changed in over a year'), { terms: [], filters: { old: true, saved: true } });
+  assert.equal(describeQuery(parseQuery('bank without a username')), 'without a username · matching “bank”');
+  const entry = { name: 'Gmail', username: 'me', otp: { secret: 'x' }, derive: null };
+  assert.ok(matchesQuery(entry, ['Gmail', 'me'], [], parseQuery('gmail with 2fa')));
+  assert.ok(!matchesQuery(entry, ['Gmail', 'me'], [], parseQuery('weak gmail')));
+  assert.ok(matchesQuery(entry, ['Gmail', 'me'], [{ label: 'Weak' }], parseQuery('weak gmail')));
+  const model = { create: async () => ({ prompt: async () => JSON.stringify({ words: ['Google Mail', 'password'], filters: ['otp', 'bogus'] }), destroy() {} }) };
+  assert.deepEqual(await aiQuery('which of my google mail accounts use two step', { model }),
+    { terms: ['google', 'mail'], filters: { otp: true } });
 });

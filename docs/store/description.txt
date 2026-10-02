@@ -16,6 +16,8 @@ FEATURES
 • Per-site rules: set the length (8–64) and character types for sites with limits.
 • Key fingerprint: four words confirm you typed the same email and passphrase on every device. Different words mean a typo.
 • Match site rules with on-device AI: reads a sign-up page's password requirements with Chrome's built-in Gemini Nano (or a built-in reader) and generates a password that fits. Nothing leaves your device.
+• Fake-site warning: the popup warns when an address imitates a site you have a login for, such as paypa1.com or paypal-login.com.
+• Plain-language search: try "weak passwords" or "gmail with 2FA". On-device AI can interpret longer questions; your vault is never given to it.
 • Saved logins: store existing passwords, PINs, and Wi-Fi keys in an AES-256-GCM encrypted vault.
 • One-click fill: the toolbar popup finds logins for the current site and fills the form.
 • Two-factor codes (TOTP): paste a setup key or QR screenshot to see and fill 6-digit 2FA codes.

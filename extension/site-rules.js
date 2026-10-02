@@ -2,6 +2,9 @@
 // The on-device model (Chrome's built-in Gemini Nano) is used when available;
 // a small rule-based parser covers everything else. Nothing leaves the device.
 import { DEFAULT_RULES, GROUP_ORDER, validRules } from './crypto.js';
+import { promptJson } from './ai.js';
+
+export { aiAvailability, startAiDownload } from './ai.js';
 
 const MAX_TEXT = 4_000;
 
@@ -89,52 +92,23 @@ const SCHEMA = {
   additionalProperties: false,
 };
 
-const LANGUAGES = { expectedInputs: [{ type: 'text', languages: ['en'] }], expectedOutputs: [{ type: 'text', languages: ['en'] }] };
-
-function withTimeout(promise, ms) {
-  let timer;
-  const timeout = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('Timed out.')), ms); });
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
-}
-
-// "available", "downloadable", "downloading", or "unavailable".
-export async function aiAvailability(model = globalThis.LanguageModel, ms = 3_000) {
-  if (!model?.availability) return 'unavailable';
-  try { return await withTimeout(model.availability(LANGUAGES), ms); } catch { return 'unavailable'; }
-}
-
-// Starts the one-time model download (needs a click). Chrome finishes it in the background.
-export function startAiDownload(model = globalThis.LanguageModel) {
-  model.create(LANGUAGES).then((session) => session.destroy(), () => {});
-}
-
-export async function aiRules(text, { model = globalThis.LanguageModel, ms = 30_000 } = {}) {
-  const session = await withTimeout(model.create({
-    ...LANGUAGES,
-    initialPrompts: [{
-      role: 'system',
-      content: 'You read password requirements from a website sign-up or change-password page and report them exactly. ' +
-        'Only report limits the text states. Unstated limits are null, and unmentioned character types are allowed. ' +
-        'anySymbolAllowed is false if symbols are forbidden or only some specific symbols are allowed. ' +
-        'found is false if the text states no password requirements.',
-    }],
-  }), ms);
-  try {
-    const answer = JSON.parse(await withTimeout(
-      session.prompt(`Page text:\n"""\n${text.slice(0, MAX_TEXT)}\n"""`, { responseConstraint: SCHEMA }), ms));
-    if (!answer.found) return null;
-    const length = (value) => (Number.isInteger(value) && value > 0 && value <= 1_000 ? value : null);
-    return {
-      minLength: length(answer.minLength),
-      maxLength: length(answer.maxLength),
-      lowercase: answer.lowercaseAllowed !== false,
-      uppercase: answer.uppercaseAllowed !== false,
-      digits: answer.digitsAllowed !== false,
-      symbols: answer.anySymbolAllowed !== false,
-    };
-  } finally {
-    session.destroy();
-  }
+export async function aiRules(text, options) {
+  const answer = await promptJson(
+    'You read password requirements from a website sign-up or change-password page and report them exactly. ' +
+      'Only report limits the text states. Unstated limits are null, and unmentioned character types are allowed. ' +
+      'anySymbolAllowed is false if symbols are forbidden or only some specific symbols are allowed. ' +
+      'found is false if the text states no password requirements.',
+    `Page text:\n"""\n${text.slice(0, MAX_TEXT)}\n"""`, SCHEMA, options);
+  if (!answer.found) return null;
+  const length = (value) => (Number.isInteger(value) && value > 0 && value <= 1_000 ? value : null);
+  return {
+    minLength: length(answer.minLength),
+    maxLength: length(answer.maxLength),
+    lowercase: answer.lowercaseAllowed !== false,
+    uppercase: answer.uppercaseAllowed !== false,
+    digits: answer.digitsAllowed !== false,
+    symbols: answer.anySymbolAllowed !== false,
+  };
 }
 
 // The strongest EasyPwd rules that satisfy the requirements, or null if none can.

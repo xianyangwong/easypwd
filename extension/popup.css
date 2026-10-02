@@ -121,3 +121,6 @@ label { display: block; font-weight: 550; }
 .rules { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: -2px 0 8px; }
 .rules .link { padding: 0; white-space: nowrap; }
 #suggest-rules-note { margin: -4px 0 8px; }
+.alert { display: flex; gap: 8px; margin: 0 0 10px; padding: 8px 10px; border: 1px solid var(--danger); border-radius: 7px; color: var(--danger); }
+.alert .icon { flex: none; margin-top: 1px; }
+.alert b { overflow-wrap: anywhere; }

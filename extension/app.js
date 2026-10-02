@@ -7,6 +7,7 @@ import { copyText } from './clipboard.js';
 import { entriesFromChromeCsv } from './csv.js';
 import { passwordIssues } from './health.js';
 import { lookup } from './lookup.js';
+import { aiAvailability, aiQuery, describeQuery, matchesQuery, parseQuery } from './search.js';
 import { STORAGE_KEY, VaultStorage, sameVault } from './storage.js';
 
 const $ = (id) => document.getElementById(id);
@@ -353,12 +354,26 @@ const byName = (a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base
 let healthOnly = false; // Items list shows only logins with health issues.
 let issues = new Map();
 
+let aiSearch = null; // { query, parsed } from the on-device model for the current query.
+let aiSearchReady = false;
+
+function searchQuery() {
+  const query = $('search').value.trim();
+  if (aiSearch?.query === query) return { ...aiSearch.parsed, ai: true };
+  return { ...parseQuery(query), ai: false };
+}
+
 function visibleEntries() {
-  const query = $('search').value.trim().toLowerCase();
+  const raw = $('search').value.trim().toLowerCase();
+  const parsed = searchQuery();
   return session.entries
     .filter((entry) => !healthOnly || issues.has(entry.id))
-    .filter((entry) => !query || [entry.name, entry.username, hostOf(entry.url), entry.derive?.site ?? '']
-      .some((text) => text.toLowerCase().includes(query)))
+    .filter((entry) => {
+      if (!raw) return true;
+      const fields = [entry.name, entry.username, hostOf(entry.url), entry.derive?.site ?? '', entry.notes];
+      return fields.some((text) => text.toLowerCase().includes(raw)) ||
+        matchesQuery(entry, fields, issues.get(entry.id) ?? [], parsed);
+    })
     .sort(byName);
 }
 
@@ -384,7 +399,11 @@ function renderItems() {
   }));
   $('list-empty').textContent = session.entries.length === 0 && !query ?
     'No logins yet. Type a website above, or click + to add one.' :
-    entries.length === 0 ? `No logins match “${query}”.` : '';
+    entries.length === 0 ? `No logins match “${query}”.${aiSearchReady && query.includes(' ') && !searchQuery().ai ? ' Press Enter to ask on-device AI.' : ''}` : '';
+  const parsed = searchQuery();
+  const understood = query && (parsed.ai || Object.keys(parsed.filters).length) ? describeQuery(parsed) : '';
+  $('search-hint').textContent = understood ? `${parsed.ai ? 'On-device AI found logins: ' : 'Logins: '}${understood}` : '';
+  $('search-hint').hidden = !understood;
   $('health-nudge').hidden = !issues.size;
   $('health-nudge').replaceChildren(healthOnly ?
     `Showing ${issues.size} login${issues.size === 1 ? '' : 's'} that need attention. ` :
@@ -503,12 +522,21 @@ function warnIcon() {
 }
 
 $('search').addEventListener('input', renderItems);
-$('search').addEventListener('keydown', (event) => {
+$('search').addEventListener('keydown', async (event) => {
   if (event.key !== 'Enter') return;
   event.preventDefault();
   const entries = visibleEntries();
+  const query = $('search').value.trim();
   if (!$('create-from-search').hidden) $('create-from-search').click();
   else if (entries.length === 1) select(entries[0].id);
+  else if (!entries.length && aiSearchReady && query.includes(' ') && aiSearch?.query !== query) {
+    $('list-empty').textContent = 'Asking on-device AI…';
+    try {
+      const parsed = await aiQuery(query);
+      if ($('search').value.trim() === query) aiSearch = { query, parsed };
+    } catch { /* keep the plain result */ }
+    renderItems();
+  }
 });
 $('dv-reveal').addEventListener('click', () => {
   if (!isActive()) return;
@@ -1162,6 +1190,7 @@ if (globalThis.chrome?.runtime?.onMessage) {
 
 async function start() {
   $('app-version').textContent = globalThis.chrome?.runtime?.getManifest?.().version ?? '';
+  aiAvailability().then((state) => { aiSearchReady = state === 'available'; });
   if (!storage) {
     renderLock();
     $('master').disabled = true;

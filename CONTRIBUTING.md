@@ -40,6 +40,11 @@ Use a disposable Chrome profile and fake credentials.
    field, click **Match site rules** in the popup: the suggestion must change to
    16 characters without symbols, and **Save to vault** must open the editor
    with the same length, groups, and preview.
+   Search "weak passwords" and "gmail with 2FA": the hint under the search
+   box must describe the filter and the list must match. With a login for
+   `paypal.com`, open the popup on a look-alike host (for example map
+   `paypa1.com` to a local server with `--host-resolver-rules`): the fake-site
+   warning must show.
 5. Lock and check that inputs and credential names disappear. A wrong
    passphrase must fail with a clear message, keep the field selected for
    retyping, and leave the vault unchanged. Caps Lock should show a warning.
